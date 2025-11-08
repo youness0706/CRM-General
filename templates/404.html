@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}حدث خطأ{% endblock %}
+{% block content %}
+    <style>
+        
+        body {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: #343a40;
+        }
+        .card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+        .card-header {
+            background: #007bff;
+            color: white;
+        }
+        .btn-primary {
+            background-color: #0069d9;
+            border-color: #005cbf;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #004080;
+        }
+        .error-icon {
+            font-size: 4rem;
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card text-center">
+            <div class="card-header">
+                <h2>حدث خطأ</h2>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <i class="fas fa-exclamation-circle error-icon"></i>
+                </div>
+                <h5 class="card-title">عذرًا، حدث خطأ غير متوقع أثناء معالجة طلبك.</h5>
+                <p class="card-text text-muted">الرجاء المحاولة مرة أخرى أو العودة لاحقًا.</p>
+                <a href="/" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home me-2"></i>العودة إلى الصفحة الرئيسية
+                </a>
+            </div>
+            <div class="card-footer text-muted">
+                &copy; 2024 نجوم أركانة - جميع الحقوق محفوظة
+            </div>
+        </div>
+    </div>
+    {% endblock %}

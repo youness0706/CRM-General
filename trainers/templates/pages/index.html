@@ -1,0 +1,663 @@
+{% extends 'base/base.html' %}
+{% block title %}
+الرئيسية
+{% endblock %}
+
+{% block content %}
+<!-- Previous content remains the same until charts section -->
+<div class="container-fluid  mt-3">
+    <!-- Financial Overview Cards section remains unchanged -->
+     <H2>مرحبًا بكم في لوحة التحكم الرئيسية</H2>
+     <div class="row g-3">
+        
+        <div class="col-12 col-sm-12 col-md-8 col-lg-4">
+          <button class="btn btn-outline-secondary w-100 py-3 rounded-3 border-2 fw-bold" onclick="copyLink()">
+            <i class="fas fa-link d-block mb-2 fa-lg"></i>
+            نسخ رابط إضافة طالب
+          </button>
+        </div>
+     </div>
+    
+    <!-- Enhanced Charts Row -->
+    <div class="row">
+        <!-- Income by Category Chart -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">تحليل الدخل حسب الفئة</h6>
+                    <div class="chart-period-selector">
+                        <button class="btn btn-sm btn-outline-primary active" data-period="month">شهري</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:50vh; width:100%">
+                        <canvas id="incomeByCategoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Unpaid Trainers by Category -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">المتدربون غير المدفوعين</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:45vh; width:100%">
+                        <canvas id="unpaidTrainersChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions Bar -->
+    <div class="row" id="bulkActionsBar" style="display: none;">
+        <div class="col-12">
+            <div class="card bg-warning text-dark mb-3">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>تم تحديد <span id="selectedCount">0</span> متدرب</strong>
+                        </div>
+                        <div>
+                            <button class="btn btn-danger btn-sm me-2" id="deactivateSelected">
+                                <i class="fas fa-user-slash"></i> إلغاء التفعيل
+                            </button>
+                            <button class="btn btn-secondary btn-sm" id="clearSelection">إلغاء التحديد</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+      
+    <!-- Styled Payment Status Details with Checkboxes -->
+    <div class="row">
+        {% for category, status in payment_status.items %}
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-gradient-danger text-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold">{{ status.label }} - غير مدفوعة</h6>
+                        <div class="form-check">
+                            <input class="form-check-input select-all-category" type="checkbox" 
+                                   id="selectAll{{ category }}" data-category="{{ category }}"> 
+                            <label class="form-check-label text-white mr-5" for="selectAll{{ category }}">
+                                تحديد الكل
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-4">
+                    <div class="list-group list-group-flush">
+                        {% for trainer in status.unpaid_trainers %}
+                            <a class="text-primary" href="{% url 'profile' trainer.trainer_id %}">
+                                <div class="list-group-item border-0 px-0 py-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center">
+                                            <div class="form-check me-3">
+                                                <input class="form-check-input trainer-checkbox" type="checkbox" 
+                                                       value="{{ trainer.trainer_id }}" 
+                                                       id="trainer{{ trainer.trainer_id }}"
+                                                       data-category="{{ category }}">
+                                            </div>
+                                            <div class="avatar-circle bg-danger-light me-3">
+                                                {{ trainer.trainer_name|slice:":1" }}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{ trainer.trainer_name }}</h6>
+                                                {% if trainer.last_payment_date %}
+                                                <small class="text-muted">آخر دفع: {{ trainer.last_payment_date }}</small>
+                                                {% else %}
+                                                <small class="text-danger">لم يدفع أبدًا</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-danger rounded-pill">متأخر</span>
+                                    </div>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    
+        <!-- Styled Paid Today Trainees -->
+        <div class="row ml-0">
+            <div class="col-md-12 col-sm-12 col-12 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-gradient-success text-white py-3">
+                        <h6 class="m-0 font-weight-bold">الدين دفعوا اليوم</h6>
+                    </div>
+                    <div class="card-body px-4">
+                        <div class="list-group list-group-flush">
+                            {% if paid_today_trainees %}
+                            {% for trainee in paid_today_trainees %}
+                            <div class="list-group-item border-0 px-0 py-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-success me-3">
+                                            {{ trainee.trainer_name|slice:":1" }}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ trainee.trainer_name }}</h6>
+                                            <small class="text-muted">{{ trainee.payment_date }}</small>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span class="badge badge-success">{{ trainee.payment_category }}</span>
+                                        <span class="badge badge-primary">{{ trainee.payment_amount }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% endfor %}
+                            {% else %}
+                            <small class="text-success badge font-weight-bold m-3">لم يدفع أحد اليوم أبدًا</small>
+                            {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+</div>
+
+<!-- Updated styles -->
+<style>
+/* Previous styles remain unchanged */
+
+.chart-container {
+    margin: auto;
+    max-height: 600px;
+}
+
+.chart-period-selector {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.chart-period-selector .btn {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.chart-period-selector .btn.active {
+    background-color: #4e73df;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .chart-container {
+        height: 40vh !important;
+    }
+    
+    .card-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .chart-period-selector {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Animation classes for charts */
+.chart-animate {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #fff;
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.bg-gradient-danger {
+    background: linear-gradient(45deg, #dc3545, #ff6b6b);
+}
+
+.bg-danger-light {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.list-group-item {
+    transition: background-color 0.2s ease-in-out;
+}
+
+.list-group-item:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Checkbox styles */
+.form-check-input {
+    width: 1.2em;
+    height: 1.2em;
+}
+
+.trainer-checkbox:checked + .avatar-circle {
+    border: 2px solid #dc3545;
+}
+
+/* Bulk actions bar */
+#bulkActionsBar {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+/* Loading state */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #ccc;
+    border-top-color: #333;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+
+<!-- Updated Charts.js configuration -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default font for all charts
+    Chart.defaults.font.family = "'Tajawal', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif";
+    Chart.defaults.font.size = 14;
+    
+    // Enhanced color palette
+    const colorPalette = {
+        primary: ['rgba(78, 115, 223, 0.8)', 'rgba(54, 185, 204, 0.8)', 'rgba(28, 200, 138, 0.8)'],
+        hover: ['rgba(78, 115, 223, 1)', 'rgba(54, 185, 204, 1)', 'rgba(28, 200, 138, 1)'],
+        background: ['rgba(78, 115, 223, 0.05)', 'rgba(54, 185, 204, 0.05)', 'rgba(28, 200, 138, 0.05)']
+    };
+
+    // Income by Category Chart
+    const ctxCategory = document.getElementById('incomeByCategoryChart').getContext('2d');
+    const incomeByCategoryChart = new Chart(ctxCategory, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [
+                {
+                    label: 'شهرية',
+                    data: {{ chart_data.month|safe }},
+                    backgroundColor: colorPalette.primary[0],
+                    hoverBackgroundColor: colorPalette.hover[0],
+                    borderRadius: 6,
+                    borderSkipped: false
+                },
+                {
+                    label: 'انخراط',
+                    data: {{ chart_data.subscription|safe }},
+                    backgroundColor: colorPalette.primary[1],
+                    hoverBackgroundColor: colorPalette.hover[1],
+                    borderRadius: 6,
+                    borderSkipped: false
+                },
+                {
+                    label: 'التأمين',
+                    data: {{ chart_data.assurance|safe }},
+                    backgroundColor: colorPalette.primary[2],
+                    hoverBackgroundColor: colorPalette.hover[2],
+                    borderRadius: 6,
+                    borderSkipped: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    titleColor: '#6e707e',
+                    bodyColor: '#858796',
+                    borderColor: '#e3e6f0',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y + ' DH';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    stacked: true,
+                    grid: {
+                        borderDash: [2],
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+
+    // Enhanced Unpaid Trainers Chart
+    const ctxUnpaid = document.getElementById('unpaidTrainersChart').getContext('2d');
+    const unpaidTrainersChart = new Chart(ctxUnpaid, {
+        type: 'doughnut',
+        data: {
+            labels: [
+                {% for category, status in payment_status.items %}
+                '{{ status.label }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                data: [
+                    {% for category, status in payment_status.items %}
+                    {{ status.total_unpaid_trainers }},
+                    {% endfor %}
+                ],
+                backgroundColor: colorPalette.primary,
+                hoverBackgroundColor: colorPalette.hover,
+                borderWidth: 0,
+                cutout: '75%'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    titleColor: '#6e707e',
+                    bodyColor: '#858796',
+                    borderColor: '#e3e6f0',
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const value = context.parsed;
+                            const percentage = ((value/total) * 100).toFixed(1);
+                            return `${context.label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Handle period selector buttons
+    document.querySelectorAll('.chart-period-selector .btn').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('.chart-period-selector .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            this.classList.add('active');
+            // Here you would typically update the chart data based on the selected period
+        });
+    });
+
+    // Handle responsive behavior
+    function handleResize() {
+        const width = window.innerWidth;
+        if (width < 768) {
+            // Mobile optimizations
+            Chart.defaults.font.size = 12;
+            incomeByCategoryChart.options.plugins.legend.position = 'bottom';
+            unpaidTrainersChart.options.plugins.legend.position = 'bottom';
+        } else {
+            // Desktop settings
+            Chart.defaults.font.size = 14;
+            incomeByCategoryChart.options.plugins.legend.position = 'top';
+            unpaidTrainersChart.options.plugins.legend.position = 'bottom';
+        }
+        incomeByCategoryChart.update();
+        unpaidTrainersChart.update();
+    }
+
+    // Initial call and event listener for resize
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    // ========== CHECKBOX FUNCTIONALITY ==========
+    
+    const trainerCheckboxes = document.querySelectorAll('.trainer-checkbox');
+    const selectAllCheckboxes = document.querySelectorAll('.select-all-category');
+    const bulkActionsBar = document.getElementById('bulkActionsBar');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    const deactivateBtn = document.getElementById('deactivateSelected');
+    const clearSelectionBtn = document.getElementById('clearSelection');
+
+    // Function to update the bulk actions bar visibility and count
+    function updateBulkActionsBar() {
+        const selectedCheckboxes = document.querySelectorAll('.trainer-checkbox:checked');
+        const count = selectedCheckboxes.length;
+        
+        if (count > 0) {
+            bulkActionsBar.style.display = 'block';
+            selectedCountSpan.textContent = count;
+        } else {
+            bulkActionsBar.style.display = 'none';
+        }
+    }
+
+    // Handle individual trainer checkbox changes
+    trainerCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateBulkActionsBar();
+            
+            // Update the "Select All" checkbox for this category
+            const category = this.dataset.category;
+            const categoryCheckboxes = document.querySelectorAll(`.trainer-checkbox[data-category="${category}"]`);
+            const categorySelectAll = document.querySelector(`.select-all-category[data-category="${category}"]`);
+            
+            const checkedCount = document.querySelectorAll(`.trainer-checkbox[data-category="${category}"]:checked`).length;
+            
+            if (checkedCount === categoryCheckboxes.length) {
+                categorySelectAll.checked = true;
+                categorySelectAll.indeterminate = false;
+            } else if (checkedCount > 0) {
+                categorySelectAll.checked = false;
+                categorySelectAll.indeterminate = true;
+            } else {
+                categorySelectAll.checked = false;
+                categorySelectAll.indeterminate = false;
+            }
+        });
+    });
+
+    // Handle "Select All" checkboxes
+    selectAllCheckboxes.forEach(selectAll => {
+        selectAll.addEventListener('change', function() {
+            const category = this.dataset.category;
+            const categoryCheckboxes = document.querySelectorAll(`.trainer-checkbox[data-category="${category}"]`);
+            
+            categoryCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            
+            updateBulkActionsBar();
+        });
+    });
+
+    // Handle clear selection
+    clearSelectionBtn.addEventListener('click', function() {
+        trainerCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        selectAllCheckboxes.forEach(selectAll => {
+            selectAll.checked = false;
+            selectAll.indeterminate = false;
+        });
+        updateBulkActionsBar();
+    });
+
+    // Handle bulk deactivation
+    deactivateBtn.addEventListener('click', function() {
+        const selectedCheckboxes = document.querySelectorAll('.trainer-checkbox:checked');
+        const trainerIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+        
+        if (trainerIds.length === 0) {
+            alert('يرجى تحديد متدربين أولاً');
+            return;
+        }
+
+        if (!confirm(`هل أنت متأكد من إلغاء تفعيل ${trainerIds.length} متدرب؟`)) {
+            return;
+        }
+
+        // Add loading state
+        this.classList.add('loading');
+        this.disabled = true;
+
+        // Send AJAX request
+        fetch('{% url "bulk_deactivate_trainers" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                trainer_ids: trainerIds
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                alert(data.message);
+                
+                // Remove deactivated trainers from the UI
+                selectedCheckboxes.forEach(checkbox => {
+                    const trainerItem = checkbox.closest('.list-group-item');
+                    if (trainerItem) {
+                        trainerItem.remove();
+                    }
+                });
+                
+                // Update bulk actions bar
+                updateBulkActionsBar();
+                
+                // Refresh the page to update counts and charts
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                alert('خطأ: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('حدث خطأ أثناء إلغاء التفعيل');
+        })
+        .finally(() => {
+            // Remove loading state
+            this.classList.remove('loading');
+            this.disabled = false;
+        });
+    });
+});
+function copyLink(){
+    const link = "{{ request.scheme }}://{{ request.get_host }}{% url 'addmegym' %}";
+    navigator.clipboard.writeText(link).then(() => {
+      // Enhanced notification
+      const toast = document.createElement('div');
+      toast.className = 'position-fixed top-0 start-50 translate-middle-x mt-4 alert alert-success alert-dismissible fade show shadow-lg rounded-4';
+      toast.style.zIndex = '9999';
+      toast.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        تم نسخ الرابط بنجاح!
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      `;
+      document.body.appendChild(toast);
+      
+      // Auto remove after 3 seconds
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 3000);
+    }).catch(() => {
+      alert("تم نسخ الرابط: " + link);
+    });
+  
+}
+</script>
+
+<!-- Charts.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'base/base.html' %}
+{% block title %}
+    إضافة دفعة
+{% endblock %}
+{% block content %}
+
+<div class="container mt-5">
+    <!-- Success Message -->
+    <div class="alert alert-success text-center" role="alert">
+        تمت بنجاح إضافة الدفعة!
+    </div>
+
+    <!-- Buttons -->
+    <div class="d-flex justify-content-center gap-3">
+        <a href="{% url 'add_payment' %}" class="btn btn-primary btn-lg">
+            إضافة دفعة جديدة
+        </a>
+        <a href="{% url 'home' %}" class="btn btn-secondary btn-lg">
+            الرئيسية
+        </a>
+    </div>
+</div>
+
+{% endblock %}

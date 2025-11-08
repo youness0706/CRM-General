@@ -1,0 +1,317 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% block content %}
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        .page-header {
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                padding: 15px;
+            }
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+            .page-header img {
+                width: 80px;
+            }
+        }
+
+        .btn-light {
+            background-color: white;
+            border: 1px solid #007bff;
+            color: #007bff;
+            margin: 10px 0;
+        }
+
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+
+        /* Responsive table styles */
+        .table-responsive-container {
+            overflow-x: auto;
+            margin: 15px -15px;
+            padding: 0 15px;
+        }
+
+        @media (max-width: 768px) {
+            .table {
+                font-size: 0.85rem;
+            }
+            .table td, .table th {
+                padding: 0.5rem;
+            }
+        }
+
+        /* Chart container styles */
+        .charts-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            margin: 20px 0;
+        }
+
+        .chart-wrapper {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .chart-container {
+            position: relative;
+            margin: 0 auto;
+            height: 300px;
+            width: 100%;
+        }
+
+        @media (max-width: 576px) {
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        .modal-header {
+            background-color: #007bff;
+            color: white;
+        }
+
+        /* Summary cards responsive */
+        @media (max-width: 768px) {
+            .summary-card {
+                margin-bottom: 10px;
+            }
+            .fs-4 {
+                font-size: 1.2rem !important;
+            }
+        }
+
+        /* Container padding for mobile */
+        @media (max-width: 768px) {
+            .container {
+                padding-right: 10px;
+                padding-left: 10px;
+            }
+        }
+    </style>
+
+<div class="container">
+    <!-- Page Header -->
+    <div class="page-header text-center">
+        <h1>تقرير الحالة المالية</h1>
+        <img src="{% static 'images/logo/logo.png' %}" alt="شعار النادي" width="100" class="my-3">
+        <p id="report-period">نظرة شاملة على الأداء المالي للنادي من {{start}} إلى {{end}}</p>
+        <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#periodModal">تحديد الفترة الزمنية</button>
+    </div>
+
+    <!-- Financial Summary -->
+    <section class="mb-4">
+        <h2 class="text-center">الملخص المالي</h2>
+        <div class="row text-center">
+            <div class="col-12 col-md-4 mb-3">
+                <div class="card bg-success text-white p-3 summary-card">
+                    <h4>الإيرادات</h4>
+                    <p class="fs-4 fw-bold">{{profit}}</p>
+                </div>
+            </div>
+            <div class="col-12 col-md-4 mb-3">
+                <div class="card bg-danger text-white p-3 summary-card">
+                    <h4>المصروفات</h4>
+                    <p class="fs-4 fw-bold">{{total_costs}}</p>
+                </div>
+            </div>
+            <div class="col-12 col-md-4 mb-3">
+                <div class="card bg-primary text-white p-3 summary-card">
+                    <h4>الفائض/العجز</h4>
+                    <p class="fs-4 fw-bold">{{ net_profit }}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Income Details -->
+    <section class="mb-4">
+        <h2 class="text-center">تفاصيل الإيرادات</h2>
+        <div class="table-responsive-container">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الوصف</th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th>المبلغ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <thead>
+                        <tr>
+                            <th>العنوان</th>
+                            <th>الوصف</th>
+                            <th></th>
+                            <th>التاريخ</th>
+                            <th>المبلغ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            
+                            <td>الدورات التدريبية والاختبارات</td>
+                            <td></td>
+                            <td>العدد : {{articles_nb}}</td>
+                            <td></td>
+                            <td>{{total_article_costs}} DH</td>
+                        </tr>
+                        {% for expenses in added_expenses %}
+                        <tr>
+                            <td>{{expenses.cost}}</td>
+                            <td>{{expenses.desc}}</td>
+                            <th></th>
+                            <td>{{expenses.date|date:"M d, Y"}}</td>
+                            <td>{{expenses.amount}} DH</td>
+                        </tr>
+                        {% endfor %}
+                        {% for staff in staff %}
+                        <tr>
+                            <td>{{ staff.user.first_name }} {{ staff.user.first_name }}</td>
+                            <td>{{ staff.role }}</td>
+                            <th></th>
+                            <td>{{staff.datepay}}</td>
+                            <td>{{staff.salary}} DH</td>
+                        </tr>
+                        {% endfor %}
+                        <tr>
+                            <td>الايجار<td>
+                            <td></td>
+                            <th>{{org.datepay}}</th>
+                            <td>{{rent_total}} DH</td>
+                        </tr>
+    
+                    </tbody>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Expenses Details -->
+    <section class="mb-4">
+        <h2 class="text-center">تفاصيل المصروفات</h2>
+        <div class="table-responsive-container">
+            <table class="table table-striped table-hover">
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>اشتراكات الأعضاء</td>
+                        <td>الكبار : {{numbers.big}}</td>
+                        <td>الفتيان : {{numbers.med}}</td>
+                        <td>الصغار : {{numbers.small}}</td>
+                        <td>{{payments_total}} DH</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>الدورات التدريبية والاختبارات</td>
+                        <td></td>
+                        <td>العدد : {{articles_nb}}</td>
+                        <td></td>
+                        <td>{{artspro}} DH</td>
+                    </tr>
+                    {% for pay in addedpayments %}
+                    <tr>
+                        <td>{{ forloop.counter|add:'2' }}</td>
+                        <td>{{pay.title}}</td>
+                        <td>{{pay.desc}}</td>
+                        <td>{{pay.date|date:"M d, Y"}}</td>
+                        <td></td>
+                        <td>{{ pay.amount }}DH</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                
+            </table>
+        </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="charts-section">
+        <h2 class="text-center w-100">الرسوم البيانية</h2>
+        
+        <div class="chart-wrapper">
+            <h3 class="text-center">الإيرادات</h3>
+            <div class="chart-container">
+                <canvas id="incomeChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-wrapper">
+            <h3 class="text-center">المصروفات</h3>
+            <div class="chart-container">
+                <canvas id="expensesChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal remains the same -->
+    {{!-- Your existing modal code --}}
+
+    <script>
+        // Your existing chart initialization code with one small change
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    enabled: true
+                }
+            }
+        };
+
+        // Income Chart
+        const incomeCtx = document.getElementById('incomeChart').getContext('2d');
+        new Chart(incomeCtx, {
+            type: 'pie',
+            data: {
+                labels: ['اشتراكات','الأنشطة', 'اخرى'],
+                datasets: [{
+                    data: [{{payments_total|safe}}, {{artspro|safe}}, {{total_added_pay|safe}}],
+                    backgroundColor: ['#007bff', '#28a745', '#ffc107']
+                }]
+            },
+            options: chartOptions
+        });
+
+        // Expenses Chart
+        const expensesCtx = document.getElementById('expensesChart').getContext('2d');
+        new Chart(expensesCtx, {
+            type: 'pie',
+            data: {
+                labels: ['رواتب', 'إيجار', 'الانشطة','أخرى'],
+                datasets: [{
+                    data: [{{staff_total}}, {{rent_total}}, {{total_article_costs}},{{total_added_costs}}],
+                    backgroundColor: ['#dc3545', '#17a2b8', '#6c757d','#df73ff']
+                }]
+            },
+            options: chartOptions
+        });
+    </script>
+{% endblock %}

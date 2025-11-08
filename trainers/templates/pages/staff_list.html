@@ -1,0 +1,66 @@
+{% extends 'base/base.html' %}
+{% block title %}
+    إعدادات الجمعية
+{% endblock %}
+{% block content %}
+
+<div class="container mt-5">
+    <!-- Organization Settings -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">إعدادات الجمعية</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>اسم الجمعية:</strong> {{ organization.name }}</p>
+            <p><strong>الوصف:</strong> {{ organization.description }}</p>
+            <p><strong>تاريخ التأسيس:</strong> {{ organization.established_date }}</p>
+            <p><strong>الإيجار الشهري:</strong> {{ organization.rent_amount }}</p>
+            <p><strong>رقم الهاتف:</strong> {{ organization.phone_number }}</p>
+            <p><strong>البريد الإلكتروني:</strong> {{ organization.email }}</p>
+            <a href="{% url 'edit_organization' %}" class="btn btn-primary">تعديل بيانات الجمعية</a>
+        </div>
+    </div>
+
+    <!-- Staff List -->
+    <div class="card">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="card-title mb-0">قائمة الموظفين <a href="{% url 'add_staff' %}" class="btn btn-info text-light">اضافة موظف جديد</a></h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>اسم المستخدم</th>
+                            <th>الدور</th>
+                            <th>راتب</th>
+                            <th>تاريخ البدء</th>
+                            <th>مدير؟</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for staff in staff_members %}
+                        <tr>
+                            <td>{{ staff.user.username }}</td>
+                            <td>{{ staff.role }}</td>
+                            <td>{{ staff.salary }}</td>
+                            <td>{{ staff.started }}</td>
+                            <td>{{ staff.is_admin|yesno:"نعم,لا" }}</td>
+                            <td>
+                                <a href="{% url 'edit_staff' staff.id %}" class="btn btn-sm btn-warning">تعديل</a>
+                                <a href="{% url 'delete_staff' staff.id %}" class="btn btn-sm btn-danger" onclick="return confirm('هل أنت متأكد من حذف هذا الموظف؟')">حذف</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+        
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+{% endblock %}

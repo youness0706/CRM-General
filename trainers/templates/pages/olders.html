@@ -1,0 +1,139 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% block title %}
+    المتدربين
+{% endblock %}
+{% block content %}
+<section class="section m-2">
+    <div class="container">
+        
+        <div class="col-md-4 mt-3">
+            <span id="trainee-count" class="badge bg-primary">عدد المتدربين: {{number}}</span>
+        </div>
+        
+        <div class="justify-content-center row">
+            <div class="col-lg-12">
+                <div class="candidate-list-widgets mb-4">
+                    <div class="g-2 row">
+                    <div class="col-lg-3">
+                        <div class="filler-job-form">
+                            <i class="uil uil-briefcase-alt"></i><input id="search-input" placeholder="اسم المتدرب" type="search" class="form-control filler-job-input-box form-control" onkeyup="filterTrainers()" />
+
+                        </div>
+                    </div>
+                    
+                    <form class="col-lg-9">
+                        
+                        <div class="g-2 row">
+                            <div class="col-lg-3">
+                                <div class="selection-widget">
+                                    <select class="form-select" data-trigger="true" name="order" id="choices-single-filter-orderbyk" aria-label="Default select example">
+                                        <option hidden>الترتيب
+                                        </option>
+                                        <option value="first_first">الجديد أولا</option>
+                                        <option value="last_first">القديم أولا</option>
+                                        <option value="first_name">حسب الاسم</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="filler-job-form">
+                                    <i class="uil uil-clipboard-notes"></i>
+                                    <select class="form-select selectForm__inner" data-trigger="true" name="gender" id="choices-single-categories" aria-label="Default select example">
+                                        <option value="" hidden>الجنس</option>
+                                        <option value="male">الدكور</option>
+                                        <option value="fmale">الانات</option>
+                                    </select>
+                                </div>
+
+                            </div>
+                            <div class="col-lg-3">
+                                <div>
+                                    <button class="btn btn-primary" type="submit"><i class="uil uil-filter"></i> تصنيف</button>
+                                
+                                    <a href="{% url 'export_data' 'trainers' %}" class="btn mr-2 btn-success"><i class="fa-solid fa-download"></i> تحميل</a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+                
+
+
+                <div id="trainers-list">
+                    {% for i in trainers %}
+                        <div class="candidate-list">
+                            <div class="candidate-list-box card mt-4">
+                                <div class="p-4 card-body">
+                                    <div class="align-items-center row">
+                                        <div class="col-auto">
+                                            <div class="candidate-list-images">
+                                                {% if i.image %}
+                                                <a href="#"><img src="{{i.image.url}}" alt="" class="avatar-md img-thumbnail rounded-circle" /></a>
+                                                {% else %}
+                                                <a href="#"><img src="{% static 'images/logo/loginlogo.png' %}" alt="" class="avatar-md img-thumbnail rounded-circle" /></a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-lg-4">
+                                            <div class="candidate-list-content mt-3 mt-lg-0">
+                                                <h5 class="fs-19 mb-0">
+                                                    {% if i.id %}
+                                                        <a class="primary-link" href="{% url 'profile' i.id %}">{{ i.first_name }} {{ i.last_name }}</a>
+                                                    {% else %}
+                                                        {{ i.first_name }} {{ i.last_name }}
+                                                    {% endif %}
+                                                </h5>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-2">
+                                            <span class="badge bg-soft-secondary fs-14 mt-1">{{i.get_category_display}}</span>
+                                        </div>
+                                        <div class="col-lg-2">
+                                            <span class="badge bg-soft-secondary fs-14 mt-1">{{i.belt_degree}}</span>
+                                        </div>
+                                        <div class="col-lg-2">
+                                            <span class="badge bg-soft-secondary fs-14 mt-1">{{i.age}}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+
+                
+            </div>
+</section>
+
+<script>
+    function filterTrainers() {
+        // احصل على النص الذي أدخله المستخدم
+        let query = document.getElementById("search-input").value.toLowerCase();
+
+        // اجلب جميع العناصر في القائمة
+        let trainers = document.querySelectorAll(".candidate-list");
+
+        // قم بتصفية القائمة
+        trainers.forEach(trainer => {
+            // احصل على اسم المتدرب
+            let name = trainer.querySelector(".primary-link").textContent.toLowerCase();
+
+            // تحقق مما إذا كان الاسم يتطابق مع النص المدخل
+            if (name.includes(query)) {
+                trainer.style.display = ""; // أظهر العنصر
+            } else {
+                trainer.style.display = "none"; // أخف العنصر
+            }
+        });
+    };
+</script>
+
+
+{% endblock %}

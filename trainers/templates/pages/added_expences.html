@@ -1,0 +1,70 @@
+{% extends 'base/base.html' %}
+{% block title %}
+    إدارة مصاريف 
+{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">قائمة المصاريف المضافة (غير الثابتة)</h2>
+    <a href="{% url 'added_payment' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> إضافة دفعة</a>
+    <!-- Payments Table -->
+    <div class="filler-job-form mt-3 mb-3">
+        <i class="uil uil-briefcase-alt"></i><input id="search-input" placeholder=" اسم المتدرب او نوع الدفعة" type="search" class="form-control filler-job-input-box form-control" onkeyup="filterTrainers()" />
+    </div>
+    <div class="table-responsive ">
+        <table class="table table-bordered text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">الدفعة</th>
+                    <th scope="col">المبلغ</th>
+                    <th scope="col">التاريخ</th>
+                    <th scope="col">إجراءات</th>
+                </tr>
+            </thead>
+            <tbody class="candidate-list">
+                {% for payment in payments %}
+                <tr>
+                    <td class="cat">{{ payment.cost }}</td>
+                    <td  class="trainee">{{ payment.amount }}</td>
+                    <td>{{ payment.date.date }}</td>
+                    <td>
+                        <!--a href="" class="btn btn-warning btn-sm">تعديل</a>-->
+                        <form action="{% url 'delete_cost' payment.id %}" method="post" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد من الحذف؟')">حذف</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-muted">لا توجد مصاريف مسجلة .</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<script>
+    function filterTrainers() {
+        // Get the input value
+        let query = document.getElementById("search-input").value.toLowerCase();
+
+        // Get all table rows in the candidate list
+        let rows = document.querySelectorAll(".candidate-list tr");
+
+        rows.forEach(row => {
+            // Get the category and trainee columns
+            let category = row.querySelector(".cat") ? row.querySelector(".cat").textContent.toLowerCase() : '';
+            let trainee = row.querySelector(".trainee") ? row.querySelector(".trainee").textContent.toLowerCase() : '';
+
+            // Check if either matches the query
+            if (category.includes(query) || trainee.includes(query)) {
+                row.style.display = ""; // Show the row
+            } else {
+                row.style.display = "none"; // Hide the row
+            }
+        });
+    }
+</script>
+{% endblock %}

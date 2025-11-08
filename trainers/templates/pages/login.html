@@ -1,0 +1,140 @@
+{% extends 'base/base.html' %}
+{% block title %}
+    تسجيل الدخول
+{% endblock %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid bg-gradient-primary" style="height: 100vh; direction: rtl;">
+    <div class="row h-100">
+        <!-- Background Image Section -->
+        <div class="col-md-7 d-none d-md-flex align-items-center justify-content-center bg-cover" 
+             style="background-image: url(''); background-size: cover; background-position: center;">
+            <div class="overlay-dark position-absolute w-100 h-100" style="background: rgba(0,0,0,0.5);"></div>
+            <div class="text-center text-white z-3 position-relative">
+                <h1 class="display-4 mb-4">مرحبًا بعودتك</h1>
+                <p class="lead">نظام إدارة الموظفين المتكامل</p>
+            </div>
+        </div>
+        
+        <!-- Login Form Section -->
+        <div class="col-md-5 bg-white d-flex align-items-center justify-content-center">
+            <div class="w-75">
+                <div class="text-center mb-5">
+                    <img src="{% static 'images/logo/loginlogo.png' %}" alt="Company Logo" class="mb-4" style="max-height: 80px;">
+                    <h2 class="h3 mb-3 font-weight-bold text-gray-900">تسجيل الدخول</h2>
+                </div>
+                {% for message in messages %}
+         {% if message.tags == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+         {% else %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+         {% endif %}
+         {{ message }}
+         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+         </div>
+         {% endfor %}
+
+                <form method="post" action="{% url 'login' %}" class="user">
+                    {% csrf_token %}
+                    
+                    {% if form.errors %}
+                    <div class="alert alert-danger alert-dismissible fade show text-right" role="alert">
+                        <strong>خطأ في تسجيل الدخول!</strong> البريد الإلكتروني أو كلمة المرور غير صحيحة.
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    {% endif %}
+
+                    <div class="form-group mb-3">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-primary text-white">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                            </div>
+                            <input type="text" class="form-control form-control-user" 
+                                   name="username" 
+                                   placeholder="اسم المستخدم" 
+                                   required 
+                                   style="text-align: right;">
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-primary text-white">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                            </div>
+                            <input type="password" class="form-control form-control-user" 
+                                   name="password" 
+                                   placeholder="كلمة المرور" 
+                                   required 
+                                   style="text-align: right;">
+                        </div>
+                    </div>
+
+                    <div class="form-group d-flex justify-content-between align-items-center mb-3">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="remember_me" name="remember_me">
+                            <label class="custom-control-label" for="remember_me">تذكرني</label>
+                        </div>
+                        <!--a href="" class="small text-primary">نسيت كلمة المرور؟</a>-->
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-user btn-block mb-3">
+                        تسجيل الدخول
+                    </button>
+
+                    <hr>
+                    <div class="text-center">
+                        <small class="text-muted">© 2024 نظام إدارة الموظفين. جميع الحقوق محفوظة.</small>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .bg-cover {
+        background-size: cover;
+        background-position: center;
+    }
+    .form-control-user {
+        border-radius: 10rem;
+        padding: 1rem;
+    }
+    .btn-user {
+        border-radius: 10rem;
+        padding: 0.75rem 1rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Optional: Add some client-side validation or interactions
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            const username = form.querySelector('input[name="username"]');
+            const password = form.querySelector('input[name="password"]');
+            
+            if (!username.value || !password.value) {
+                e.preventDefault();
+                alert('الرجاء إدخال اسم المستخدم وكلمة المرور');
+            }
+        });
+    });
+</script>
+{% endblock %}

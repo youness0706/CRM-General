@@ -1,0 +1,44 @@
+{% extends 'base/base.html' %}
+{% block title %}
+    تعديل بيانات الدفعة
+{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center text-primary mb-4">تعديل بيانات الدفعة</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+        
+        <!-- Payment Type -->
+        <div class="mb-3">
+            <label for="paymentCategry" class="form-label">نوع الدفعة</label>
+            <select id="paymentCategry" name="paymentCategry" class="form-select" required>
+                <option value="month" {% if payment.paymentCategry == "month" %}selected{% endif %}>شهرية</option>
+                <option value="subscription" {% if payment.paymentCategry == "subscription" %}selected{% endif %}>انخراط</option>
+                <option value="assurance" {% if payment.paymentCategry == "assurance" %}selected{% endif %}>التأمين</option>
+                <option value="jawaz" {% if payment.paymentCategry == "jawaz" %}selected{% endif %}>جواز</option>   
+            </select>
+        </div>
+
+        <!-- Payment Date -->
+        <div class="mb-3">
+            <label for="paymentdate" class="form-label">التاريخ</label>
+            <input type="date" id="paymentdate" name="paymentdate" value="{{ payment.paymentdate|date:'Y-m-d' }}" class="form-control" required>
+        </div>
+
+        <!-- Trainer (Read-Only) -->
+        <div class="mb-3">
+            <label for="trainer" class="form-label">المتدرب</label>
+            <input type="text" id="trainer" class="form-control" value="{{ payment.trainer.first_name }} {{ payment.trainer.last_name }}" readonly>
+        </div>
+
+        <!-- Payment Amount -->
+        <div class="mb-3">
+            <label for="paymentAmount" class="form-label">المبلغ</label>
+            <input type="number" id="paymentAmount" name="paymentAmount" value="{{ payment.paymentAmount }}" class="form-control" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">حفظ التعديلات</button>
+    </form>
+</div>
+{% endblock %}

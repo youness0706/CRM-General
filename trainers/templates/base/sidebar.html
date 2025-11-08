@@ -1,0 +1,98 @@
+{% load static %}
+
+
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'home' %}">
+            <img src="{% static 'images/logo/logo.png' %}" alt="Logo" width="40" height="40" class="d-inline-block align-text-top">
+            {% if request.organization %} {{ request.organization.name }} {% else %} الجمعية {% endif %}
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="{% url 'home' %}">الرئيسية</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="{% url 'trainees_report' %}">تحميل الوثائق</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="traineesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        المتدربون
+                    </a>
+                    <ul class="dropdown-menu text-right" aria-labelledby="traineesDropdown">
+                        <li><a class="dropdown-item" href="{% url 'trainees' 'big' %}">الكبار</a></li><hr>
+                        <li><a class="dropdown-item" href="{% url 'trainees' 'med' %}">الفتيان</a></li><hr>
+                        <li><a class="dropdown-item" href="{% url 'trainees' 'small' %}">الصغار</a></li><hr>
+                        <li><a class="dropdown-item" href="{% url 'trainees' 'women' %}">المتدربات النساء</a></li><hr>
+                        <li><a class="dropdown-item" href="{% url 'trainees' 'all' %}">الكل</a></li><hr>
+                        <li><a class="dropdown-item" href="{% url 'add_trainee' %}">اضافة متدرب جديد</a></li><hr>
+                        <li><a class="dropdown-item" href="{% url 'add_women' %}">اضافة امرأة</a></li>
+
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="activitiesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        الأنشطة
+                    </a>
+                    <ul class="dropdown-menu text-right" aria-labelledby="activitiesDropdown">
+                        <li><a class="dropdown-item" href="{% url 'articles' 'test' %}">الامتحانات</a></li>
+                        <li><a class="dropdown-item" href="{% url 'articles' 'dawri' %}">الدوريات</a></li>
+                        <li><a class="dropdown-item" href="{% url 'articles' 'training' %}">التداريب</a></li>
+                        <li><a class="dropdown-item" href="{% url 'articles' 'League' %}">البطولات</a></li>
+                        <li><a class="dropdown-item" href="{% url 'articles' 'all' %}">الكل</a></li>
+                        <li><a class="dropdown-item" href="{% url 'add_article' %}">اضافة</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle " href="#" id="traineesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        دفعات
+                    </a>
+                    <ul class="dropdown-menu text-right" aria-labelledby="traineesDropdown">
+                        <li><a class=" bg-success dropdown-item active" aria-current="page" href="{% url 'add_payment' %}">اضافة دفعة جديدة</a></li>
+                        <li><a class="dropdown-item" href="{% url 'payments_history' %}">أرشيف الدفعات</a></li>
+                        <li><a class="dropdown-item" href="{% url 'unpaid_trainees' %}"> الذين لم يدفعوا</a></li>
+                    </ul>
+                </li>
+                {% if user.is_superuser %}
+                <li class="nav-item dropdown">
+
+                    <a class="nav-link dropdown-toggle"  id="financialDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        المالية
+                    </a>
+                    <ul class="dropdown-menu text-right" aria-labelledby="financialDropdown">
+                        <li><a class="dropdown-item" href="{% url 'finantial_status' %}">التقرير المالي</a></li>
+                        <hr>
+                        <li><a class="dropdown-item" href="{% url 'add_expenses' %}">اضافة مصاريف</a></li>
+                        <hr>
+                        <li><a class="dropdown-item" href="{% url 'add_payments' %}">اضافة مداخيل</a></li>
+                    </ul>
+                </li>
+                {% else %}
+                <li><a class="nav-link active" href="{% url 'logout' %}">تسجيل الخروج</a></li>
+                {% endif %}
+
+            </ul>
+            {% if user.is_superuser %}
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <!--img src="https://github.com/mdo.png" alt="User" width="30" height="30" class="rounded-circle">-->
+                        <span class="ms-1">الجمعية</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end text-right">
+                        <li><a class="dropdown-item" href="{% url 'add_staff' %}">موظف جديد</a></li>
+                        <li><a class="dropdown-item" href="{% url 'staff_list' %}">معلومات الجمعية</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}">تسجيل الخروج</a></li>
+                    </ul>
+            {% endif %}
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

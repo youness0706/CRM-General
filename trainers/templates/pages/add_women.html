@@ -1,0 +1,135 @@
+{% extends 'base/base.html' %}
+{% block title %}
+    تسجيل المتدربين الجدد
+{% endblock %}
+{% block content %}
+
+<div class="wrapper rounded bg-light p-4 shadow-sm">
+
+    <div class="h3 text-center text-primary mb-4">استمارة التسجيل للنساء</div>
+
+    {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} border border-secondary alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+    {% endfor %}
+
+    <form class="form" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6 mt-md-0 mt-3">
+                <label for="first_name">الاسم الأول</label>
+                <input type="text" id="first_name" name="first_name" class="form-control" placeholder="أدخل اسمك الأول" required>
+            </div>
+            <div class="col-md-6 mt-md-0 mt-3">
+                <label for="last_name">الاسم العائلي</label>
+                <input type="text" id="last_name" name="last_name" class="form-control" placeholder="أدخل اسمك العائلي" required>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mt-md-0 mt-3">
+                <label for="birthday">تاريخ الميلاد</label>
+                <input type="date" id="birthday" name="birthday" class="form-control" required>
+            </div>
+            <div class="col-md-6 mt-md-0 mt-3">
+                <label>الجنس</label>
+                <div class="d-flex align-items-center mt-2">
+                    <label class="option">
+                    <label class="option ms-4">
+                        <input type="radio" name="gender" checked value="female" required> أنثى
+                        <span class="checkmark"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mt-md-0 mt-3">
+                <label for="email">البريد الإلكتروني</label>
+                <input type="email" id="email" name="email" class="form-control" placeholder="أدخل بريدك الإلكتروني" >
+            </div>
+            <div class="col-md-6 mt-md-0 mt-3">
+                <label for="phone">رقم الهاتف</label>
+                <input type="tel" id="phone" name="phone" class="form-control" placeholder="أدخل رقم هاتفك" >
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mt-md-0 mt-3">
+                <label for="cin">رقم البطاقة الوطنية</label>
+                <input type="text" id="cin" name="cin" class="form-control" placeholder="أدخل رقم بطاقتك الوطنية" >
+            </div>
+            <div class="col-md-6 mt-md-0 mt-3">
+                <label for="address">العنوان</label>
+                <input type="text" id="address" name="address" class="form-control" placeholder="أدخل عنوانك" >
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mt-md-0 mt-3">
+                <label for="education">المستوى الدراسي</label>
+                <input type="text" id="education" name="education" value="لا يوجد" class="form-control" placeholder="أدخل مستواك الدراسي" >
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mt-3">
+                <label for="belt">اختر الحزام</label>
+                <select class="form-select" id="belt" name="belt" >
+                    <option value=""  hidden>اختر الحزام</option>
+                    <option value="أبيض" selected>أبيض</option>                    
+                    <option value="أصفر">أصفر</option>
+                    <option value="برتقالي">برتقالي</option>
+                    <option value="أخضر">أخضر</option>
+                    <option value="أزرق">أزرق</option>
+                    <option value="أزرق بخط أحمر">أزرق بخط أحمر</option>
+                    <option value="أزرق مع بخطين أحمرين">أزرق بخطين أحمرين</option>
+                    <option value="أحمر">أحمر</option>
+                    <option value="أحمر بخط أسود">أحمر بخط أسود</option>
+                    <option value="أحمر مع بخطين أسودين">أحمر بخطين أسودين</option>
+                    <option value="dan1 أسود">أسود dan1</option>
+                    <option value="dan2 أسود">أسود dan2</option>
+                    <option value="dan3 أسود">أسود dan3</option>
+                    <option value="dan4 أسود">أسود dan4</option>
+                    <option value="dan5 أسود">أسود dan5</option> 
+                </select>
+            </div>
+            <div class="col-md-6 mt-md-0 mt-3">
+                <label for="upload">ارفع صورة</label>
+                <input type="file" id="upload" accept="image/*" name="upload" class="form-control">
+            </div>
+        </div>
+
+        <div class="input-group mb-3 mt-3">
+            <label for="category" class="input-group-text">الفئة</label>
+            <select class="form-select" id="category" name="category" >
+                <option value="women" selected>النساء</option>
+                
+            </select>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mt-3">
+                <label for="weight">الوزن (كغ)</label>
+                <div class="input-group">
+                    <input type="number" step="0.01" id="weight" name="weight" class="form-control" placeholder="أدخل وزنك" >
+                    <span class="input-group-text">كغ</span>
+                </div>
+            </div>
+            <div class="col-md-6 mt-3">
+                <label for="height">الطول (متر)</label>
+                <div class="input-group">
+                    <input type="number" step="0.01" id="height" name="height" class="form-control" placeholder="أدخل طولك" >
+                    <span class="input-group-text">متر</span>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-4 w-100">إرسال</button>
+    </form>
+
+</div>
+
+{% endblock %}

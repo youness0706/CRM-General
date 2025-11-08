@@ -1,0 +1,544 @@
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #28a745;
+            --danger: #dc3545;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            padding: 30px 0;
+        }
+        
+        .signup-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .signup-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .signup-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .signup-header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .signup-body {
+            padding: 40px;
+        }
+        
+        .section-title {
+            color: var(--primary);
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-left: 10px;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px 15px;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .input-group-text {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-left: none;
+            border-radius: 0 10px 10px 0;
+        }
+        
+        .input-group .form-control {
+            border-left: none;
+            border-radius: 10px 0 0 10px;
+        }
+        
+        .btn-signup {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+        
+        .btn-signup:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .validation-feedback {
+            font-size: 0.875rem;
+            margin-top: 5px;
+        }
+        
+        .available {
+            color: var(--success);
+        }
+        
+        .unavailable {
+            color: var(--danger);
+        }
+        
+        .progress-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .step {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            margin: 0 5px;
+            border-radius: 10px;
+            position: relative;
+        }
+        
+        .step.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .step.completed {
+            background: var(--success);
+            color: white;
+        }
+        
+        .password-strength {
+            height: 5px;
+            margin-top: 5px;
+            border-radius: 3px;
+            transition: all 0.3s;
+        }
+        
+        .strength-weak { background: #dc3545; width: 33%; }
+        .strength-medium { background: #ffc107; width: 66%; }
+        .strength-strong { background: #28a745; width: 100%; }
+        
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-list li i {
+            color: var(--success);
+            margin-left: 10px;
+        }
+    </style>
+
+    <div class="container signup-container">
+        <div class="signup-card">
+            <!-- Header -->
+            <div class="signup-header">
+                <h1>🥋 إنشاء حساب جديد</h1>
+                <p>انضم إلينا وابدأ في إدارة جمعيتك بكفاءة</p>
+            </div>
+
+            <!-- Body -->
+            <div class="signup-body">
+                <!-- Messages -->
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- Progress Indicator -->
+                <div class="progress-indicator">
+                    <div class="step active">
+                        <i class="bi bi-person-circle"></i>
+                        <div>معلومات الحساب</div>
+                    </div>
+                    <div class="step">
+                        <i class="bi bi-building"></i>
+                        <div>معلومات الجمعية</div>
+                    </div>
+                    <div class="step">
+                        <i class="bi bi-check-circle"></i>
+                        <div>إنهاء</div>
+                    </div>
+                </div>
+
+                <!-- Features Box -->
+                <div class="info-box">
+                    <strong>ماذا ستحصل عليه:</strong>
+                    <ul class="feature-list">
+                        <li><i class="bi bi-check-circle-fill"></i> نظام إدارة متكامل للمتدربين</li>
+                        <li><i class="bi bi-check-circle-fill"></i> تتبع الدفعات والمالية</li>
+                        <li><i class="bi bi-check-circle-fill"></i> تقارير تفصيلية</li>
+                        <li><i class="bi bi-check-circle-fill"></i> رابط تسجيل خاص بجمعيتك</li>
+                    </ul>
+                </div>
+
+                <!-- Signup Form -->
+                <form method="POST" id="signupForm" class="needs-validation" novalidate>
+                    {% csrf_token %}
+
+                    <!-- Section 1: User Account -->
+                    <div class="section-title">
+                        <i class="bi bi-person-circle"></i>
+                        معلومات الحساب
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">الاسم الأول *</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" 
+                                   value="{{ first_name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">اسم العائلة *</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" 
+                                   value="{{ last_name }}" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="username" class="form-label">اسم المستخدم *</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="username" name="username" 
+                                   value="{{ username }}" required pattern="[a-zA-Z0-9_]{3,}">
+                            <span class="input-group-text">
+                                <i class="bi bi-person" id="username-icon"></i>
+                            </span>
+                        </div>
+                        <div id="username-feedback" class="validation-feedback"></div>
+                        <small class="text-muted">3 أحرف على الأقل، حروف إنجليزية وأرقام فقط</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">البريد الإلكتروني *</label>
+                        <div class="input-group">
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ email }}" required>
+                            <span class="input-group-text">
+                                <i class="bi bi-envelope"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">رقم الهاتف</label>
+                        <div class="input-group">
+                            <input type="tel" class="form-control" id="phone" name="phone" 
+                                   value="{{ phone }}" placeholder="+212 6XX XXX XXX">
+                            <span class="input-group-text">
+                                <i class="bi bi-telephone"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">كلمة المرور *</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       required minlength="6">
+                                <span class="input-group-text" onclick="togglePassword('password')" 
+                                      style="cursor: pointer;">
+                                    <i class="bi bi-eye" id="password-toggle"></i>
+                                </span>
+                            </div>
+                            <div class="password-strength" id="password-strength"></div>
+                            <small class="text-muted">6 أحرف على الأقل</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="password_confirm" class="form-label">تأكيد كلمة المرور *</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password_confirm" 
+                                       name="password_confirm" required>
+                                <span class="input-group-text" onclick="togglePassword('password_confirm')" 
+                                      style="cursor: pointer;">
+                                    <i class="bi bi-eye" id="password_confirm-toggle"></i>
+                                </span>
+                            </div>
+                            <div id="password-match" class="validation-feedback"></div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Section 2: Organization -->
+                    <div class="section-title">
+                        <i class="bi bi-building"></i>
+                        معلومات الجمعية
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="org_name" class="form-label">اسم الجمعية *</label>
+                        <input type="text" class="form-control" id="org_name" name="org_name" 
+                               value="{{ org_name }}" required>
+                        <small class="text-muted">مثال: نجوم أركانة للتايكوندو</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="org_slug" class="form-label">المعرف (Slug) *</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="org_slug" name="org_slug" 
+                                   value="{{ org_slug }}" required pattern="[a-z0-9-]+">
+                            <span class="input-group-text">
+                                <i class="bi bi-link-45deg" id="slug-icon"></i>
+                            </span>
+                        </div>
+                        <div id="slug-feedback" class="validation-feedback"></div>
+                        <small class="text-muted">حروف إنجليزية صغيرة وأرقام وشرطات فقط (مثال: nojoum-arkana)</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="org_email" class="form-label">البريد الإلكتروني للجمعية</label>
+                            <input type="email" class="form-control" id="org_email" name="org_email" 
+                                   value="{{ org_email }}">
+                            <small class="text-muted">اترك فارغاً لاستخدام بريدك الشخصي</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="org_phone" class="form-label">هاتف الجمعية</label>
+                            <input type="tel" class="form-control" id="org_phone" name="org_phone" 
+                                   value="{{ org_phone }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="org_description" class="form-label">وصف الجمعية</label>
+                        <textarea class="form-control" id="org_description" name="org_description" 
+                                  rows="3">{{ org_description }}</textarea>
+                        <small class="text-muted">وصف مختصر عن جمعيتك (اختياري)</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="org_address" class="form-label">العنوان</label>
+                        <input type="text" class="form-control" id="org_address" name="org_address" 
+                               value="{{ org_address }}">
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Terms -->
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="terms" required>
+                        <label class="form-check-label" for="terms">
+                            أوافق على <a href="#" target="_blank">الشروط والأحكام</a> و
+                            <a href="#" target="_blank">سياسة الخصوصية</a> *
+                        </label>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-signup">
+                            <i class="bi bi-check-circle"></i>
+                            إنشاء الحساب والبدء
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Login Link -->
+                <div class="text-center mt-4">
+                    <p class="text-muted">
+                        لديك حساب بالفعل؟ 
+                        <a href="{% url 'login' %}" style="color: var(--primary); font-weight: bold;">
+                            تسجيل الدخول
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-generate slug from organization name
+        document.getElementById('org_name').addEventListener('input', function(e) {
+            const slug = e.target.value
+                .toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .trim();
+            document.getElementById('org_slug').value = slug;
+            checkSlugAvailability(slug);
+        });
+
+        // Check username availability
+        let usernameTimeout;
+        document.getElementById('username').addEventListener('input', function(e) {
+            clearTimeout(usernameTimeout);
+            const username = e.target.value;
+            
+            if (username.length < 3) return;
+            
+            usernameTimeout = setTimeout(() => {
+                fetch(`/api/check-username/?username=${username}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const feedback = document.getElementById('username-feedback');
+                        const icon = document.getElementById('username-icon');
+                        
+                        if (data.available) {
+                            feedback.className = 'validation-feedback available';
+                            feedback.innerHTML = '<i class="bi bi-check-circle-fill"></i> ' + data.message;
+                            icon.className = 'bi bi-check-circle-fill text-success';
+                        } else {
+                            feedback.className = 'validation-feedback unavailable';
+                            feedback.innerHTML = '<i class="bi bi-x-circle-fill"></i> ' + data.message;
+                            icon.className = 'bi bi-x-circle-fill text-danger';
+                        }
+                    });
+            }, 500);
+        });
+
+        // Check slug availability
+        let slugTimeout;
+        document.getElementById('org_slug').addEventListener('input', function(e) {
+            clearTimeout(slugTimeout);
+            const slug = e.target.value;
+            
+            if (slug.length < 3) return;
+            
+            slugTimeout = setTimeout(() => {
+                checkSlugAvailability(slug);
+            }, 500);
+        });
+
+        function checkSlugAvailability(slug) {
+            fetch(`/api/check-slug/?slug=${slug}`)
+                .then(res => res.json())
+                .then(data => {
+                    const feedback = document.getElementById('slug-feedback');
+                    const icon = document.getElementById('slug-icon');
+                    
+                    if (data.available) {
+                        feedback.className = 'validation-feedback available';
+                        feedback.innerHTML = '<i class="bi bi-check-circle-fill"></i> ' + data.message;
+                        icon.className = 'bi bi-check-circle-fill text-success';
+                    } else {
+                        feedback.className = 'validation-feedback unavailable';
+                        feedback.innerHTML = '<i class="bi bi-x-circle-fill"></i> ' + data.message;
+                        icon.className = 'bi bi-x-circle-fill text-danger';
+                    }
+                });
+        }
+
+        // Password strength indicator
+        document.getElementById('password').addEventListener('input', function(e) {
+            const password = e.target.value;
+            const strength = document.getElementById('password-strength');
+            
+            let score = 0;
+            if (password.length >= 6) score++;
+            if (password.length >= 10) score++;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+            if (/\d/.test(password)) score++;
+            if (/[^a-zA-Z\d]/.test(password)) score++;
+            
+            if (score <= 2) {
+                strength.className = 'password-strength strength-weak';
+            } else if (score <= 3) {
+                strength.className = 'password-strength strength-medium';
+            } else {
+                strength.className = 'password-strength strength-strong';
+            }
+        });
+
+        // Password match validation
+        document.getElementById('password_confirm').addEventListener('input', function(e) {
+            const password = document.getElementById('password').value;
+            const confirm = e.target.value;
+            const feedback = document.getElementById('password-match');
+            
+            if (confirm === '') {
+                feedback.innerHTML = '';
+                return;
+            }
+            
+            if (password === confirm) {
+                feedback.className = 'validation-feedback available';
+                feedback.innerHTML = '<i class="bi bi-check-circle-fill"></i> كلمات المرور متطابقة';
+            } else {
+                feedback.className = 'validation-feedback unavailable';
+                feedback.innerHTML = '<i class="bi bi-x-circle-fill"></i> كلمات المرور غير متطابقة';
+            }
+        });
+
+        // Toggle password visibility
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            const icon = document.getElementById(fieldId + '-toggle');
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                field.type = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        }
+
+        // Form validation
+        (function() {
+            'use strict';
+            var forms = document.querySelectorAll('.needs-validation');
+            Array.prototype.slice.call(forms).forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })();
+    </script>

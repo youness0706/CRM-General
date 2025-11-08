@@ -1,0 +1,86 @@
+{% extends 'base/base.html' %}
+{% block title %}
+الذين لم يدفعوا
+{% endblock %}
+{% block content %}
+    <div class="container mt-5">
+        <h1 class="mb-4">الذين لم يدفعوا</h1>
+        <form id="monthYearForm" class="mb-4">
+            <div class="form-row">
+                <div class="form-group col-md-3">
+                    <label for="year">السنة</label>
+                    <select class="form-control" id="year" name="year" required>
+                        {% for year in years %}
+                            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="month">الشهر</label>
+                    <select class="form-control" id="month" name="month" required>
+                        {% for month in months %}
+                            <option value="{{ month.0 }}" {% if month.0 == selected_month %}selected{% endif %}>{{ month.1 }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group bm-0 col-md-3">
+                    <select name="category" id="" class="form-control">
+                        <option value="all" {% if cat == 'all' %}selected{% endif %} >الكل</option>
+                        <option value="small" {% if cat == 'small' %}selected{% endif %}>الأطفال</option>
+                        <option value="med" {% if cat == 'med' %}selected{% endif %}>الفتيان</option>
+                        <option value="big" {% if cat == 'big' %}selected{% endif %}>الكبار</option>
+                        <option value="women" {% if cat == 'women' %}selected{% endif %}>النساء</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary mt-4">تم</button>
+                </div>
+            </div>
+        </form>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>السم</th>
+                    <th>النسب</th>
+                    <th>الفئة</th>
+                    <th>الحزام</th>
+                    <th>اخر خلصة</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trainee in unpaid_trainees %}
+                <tr>
+                    
+                    <td>
+                        <a class="primary-link" href="{% url 'profile' trainee.id %}">
+                        {{ trainee.first_name }}
+                        </a>
+                    </td>
+                    <td>
+                        <a class="primary-link" href="{% url 'profile' trainee.id %}"></a>
+                        {{ trainee.last_name }}
+                        </a>
+                    </td>
+                    <td>{{ trainee.category }}</td>
+                    <td>{{ trainee.belt_degree }}</td>
+                    <td>{{ trainee.last_payment_date|default:"لم تسجل أي دفعة" }}</td>
+                    
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#monthYearForm').on('submit', function(e) {
+                e.preventDefault();
+                var year = $('#year').val();
+                var month = $('#month').val();
+                var category = $('select[name="category"]').val();
+                window.location.href = "{% url 'unpaid_trainees' %}?year=" + year + "&month=" + month+"&category="+category;
+            });
+        });
+    </script>
+{% endblock %}

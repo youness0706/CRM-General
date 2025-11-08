@@ -1,0 +1,41 @@
+{% extends 'base/base.html' %}
+{% block title %}
+    تعديل بيانات الجمعية
+{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <h3 class="mb-4 text-center">تعديل بيانات الجمعية</h3>
+    <form method="POST"  class="bg-light p-4 rounded shadow-sm">
+        {% csrf_token %}
+        <div class="form-group mb-3">
+            <label for="name" class="form-label">اسم الجمعية</label>
+            <input type="text" id="name" name="name" class="form-control" value="{{ organization.name }}" required>
+        </div>
+        <div class="form-group mb-3">
+            <label for="description" class="form-label">الوصف</label>
+            <textarea id="description" name="description" class="form-control" rows="3">{{ organization.description }}</textarea>
+        </div>
+        <div class="form-group mb-3">
+            <label for="established_date" class="form-label">تاريخ التأسيس</label>
+            <input type="date" id="established_date" name="established_date" class="form-control" value="{{ organization.established_date|date:'Y-m-d' }}">
+        </div>
+        <div class="form-group mb-3">
+            <label for="rent_amount" class="form-label">الإيجار الشهري</label>
+            <input type="number" id="rent_amount" name="rent_amount" class="form-control" step="0.01" value="{{ organization.rent_amount }}" required>
+        </div>
+        <div class="form-group mb-3">
+            <label for="payrentdate" class="form-label">تاريخ دفع الايجار</label>
+            <input type="date" id="payrentdate" name="payrentdate" class="form-control" value="{{ organization.datepay|date:'Y-m-d' }}">
+        </div>
+        <div class="form-group mb-3">
+            <label for="phone_number" class="form-label">رقم الهاتف</label>
+            <input type="text" id="phone_number" name="phone_number" class="form-control" value="{{ organization.phone_number }}">
+        </div>
+        <div class="form-group mb-4">
+            <label for="email" class="form-label">البريد الإلكتروني</label>
+            <input type="email" id="email" name="email" class="form-control" value="{{ organization.email }}">
+        </div>
+        <button type="submit" class="btn btn-primary w-100">حفظ التعديلات</button>
+    </form>
+</div>
+{% endblock %}

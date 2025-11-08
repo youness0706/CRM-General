@@ -1,0 +1,80 @@
+{% extends "base/base.html" %}
+{% block title %}
+    قائمة المقالات
+{% endblock %} 
+{% block content %}
+<div class="container mt-5">
+    <!-- رأس الصفحة -->
+
+    <div class="text-center mb-4">
+        <h1 class="text-primary">قائمة المقالات</h1>
+        <p class="text-muted">اكتشف أحدث الانشطة وتصفح المحتوى الذي يهمك</p>
+    </div>
+    
+    <div class="col-md-12 mt-3">
+        <span id="trainee-count" class="badge bg-primary">عدد الانشطة: {{number}}</span>
+    </div>
+    <!-- زر إضافة مقال جديد -->
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{% url 'export_data' 'articles' %}" class="btn ml-2 btn-success"><i class="fa-solid fa-download"></i> تحميل</a>
+        <a href="{% url 'add_article' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> إضافة مقال جديد
+        </a>
+    </div>
+
+    <!-- قائمة المقالات -->
+    {% if articles.exists %}
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for article in articles %}
+            <div class="col">
+                <div class="card h-100 shadow-sm border-light">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h5 class="card-title">{{ article.title }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-2">
+                            <i class="bi bi-calendar"></i> {{ article.date }}
+                        </p>
+                        <p class="card-text">{{ article.content|truncatewords:20|safe }}</p>
+                    </div>
+                    <div class="card-footer text-center">
+                        <a href="{% url 'article_detail' article.id %}" class="btn btn-outline-primary">
+                            <i class="bi bi-eye"></i> عرض المزيد
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination Section -->
+        {% if is_paginated %}
+        <nav class="d-flex justify-content-center mt-4">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo; السابق</a>
+                </li>
+                {% endif %}
+
+                {% for page in paginator.page_range %}
+                <li class="page-item {% if page == page_obj.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ page }}">{{ page }}</a>
+                </li>
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">التالي &raquo;</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <div class="text-center mt-5">
+            <p class="text-muted">لا توجد مقالات لعرضها حالياً. يُمكنك إضافة مقالك الآن!</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

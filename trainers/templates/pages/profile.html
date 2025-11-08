@@ -1,0 +1,385 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% block title %}
+    {{ trainers.first_name }} {{ trainers.last_name }}
+{% endblock %}
+{% block content %}
+
+<style>
+  p, .card-title, .card-text {
+    word-wrap: break-word;
+
+}
+.row,.col-md-6,.col-md-12,.col-sm-3,.col-sm-9,.col-md-4,.col-lg-4,.col-lg-8,.col-12,.col-md-4{
+  width: 100% !important;
+  
+}
+.row,.col-md-6,.col-md-12,.col-sm-3,.col-sm-9,.col-md-4,.col-lg-4,.col-lg-8,.col-12,.col-md-4{
+  width: 100% !important;
+  
+  padding-right: 0px !important;
+  padding-left: 0px !important;
+}
+</style>
+
+<div class="container-fluid align-items-center pr-2" style="background-color: #f8f9fa;" dir="rtl">
+    <div class="container-fluid mt-2 ml-0">
+        <div class="row">
+            <!-- Profile Card -->
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-body text-center">
+                        <div class="position-relative">
+                            <img src="{% if trainers.image %}{{ trainers.image.url }}{% else %}{% static 'images/logo/logo.png' %}{% endif %}" alt="profile"
+                                class="rounded-circle img-fluid" style="width: 150px; height: 150px; object-fit: cover;">
+                            <span class="position-absolute top-0 start-100 translate-middle badge {% if trainers.is_active %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
+                                {% if trainers.is_active %}نشط{% else %}غير نشط{% endif %}
+                            </span>
+                        </div>
+                        <h5 class="my-3">{{ trainers.first_name }} {{ trainers.last_name }}</h5>
+                        <div class="mb-2">
+                            <span class="badge bg-secondary me-1">{{ trainers.get_category_display }}</span>
+                            <span class="badge bg-info"> حزام {{ trainers.belt_degree }}</span>
+                        </div>
+                        <p class="text-muted mb-1">{{ trainers.age }} عاما</p>
+                        <div class="d-flex justify-content-center mt-4">
+                            <button type="button" onclick="confirmDelete({{ trainers.id }})" class="btn btn-danger me-2">
+                                <i class="fas fa-trash-alt"></i> حذف
+                            </button>
+                            <a href="{% url 'edit_trainee' trainers.id %}" class="btn ml-2 btn-primary">
+                                <i class="fas fa-edit"></i> تعديل
+                            </a>
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPaymentModal">إضافة دفعة</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Details Card -->
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>المعلومات الشخصية</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <p class="mb-0"><i class="fas fa-id-card me-2"></i>رقم البطاقة الوطنية</p>
+                            </div>
+                            <div class="col-sm-9">
+                                <p class="text-muted mb-0">{{ trainers.CIN }}</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <p class="mb-0"><i class="fas fa-user me-2"></i>الاسم الكامل</p>
+                            </div>
+                            <div class="col-sm-9">
+                                <p class="text-muted mb-0">{{ trainers.first_name }} {{ trainers.last_name }}</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <p class="mb-0"><i class="fas fa-calendar-alt me-2"></i>تاريخ الميلاد</p>
+                            </div>
+                            <div class="col-sm-9">
+                                <p class="text-muted mb-0">{{ trainers.birth_day }}</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <p class="mb-0"><i class="fas fa-envelope me-2"></i>البريد الإلكتروني</p>
+                            </div>
+                            <div class="col-sm-9">
+                                <p class="text-muted mb-0">{{ trainers.email }}</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <p class="mb-0"><i class="fas fa-phone me-2"></i>الهاتف</p>
+                            </div>
+                            <div class="col-sm-9">
+                                <p class="text-muted mb-0">{{ trainers.phone }}</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <p class="mb-0"><i class="fas fa-phone-square me-2"></i>هاتف ولي الأمر</p>
+                            </div>
+                            <div class="col-sm-9">
+                              {% if trainers.phone_parent %}
+                                <p class="text-muted mb-0">{{ trainers.phone_parent }}</p>
+                              {% else %}
+                                <p class="text-muted mb-0">{{ trainers.phone }}</p>
+                              {% endif %}
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <p class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>العنوان</p>
+                            </div>
+                            <div class="col-sm-9">
+                                <p class="text-muted mb-0">{{ trainers.address }}</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <p class="mb-0"><i class="fas fa-medal me-2"></i>المستوى الدراسي</p>
+                            </div>
+                            <div class="col-sm-9">
+                                <p class="text-muted mb-0">{{ trainers.Degree }}</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <p class="mb-0"><i class="fas fa-ruler-vertical me-2"></i>الطول</p>
+                            </div>
+                            <div class="col-sm-9">
+                                <p class="text-muted mb-0">{{ trainers.tall }} متر</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <p class="mb-0"><i class="fas fa-weight me-2"></i>الوزن</p>
+                            </div>
+                            <div class="col-sm-9">
+                                <p class="text-muted mb-0">{{ trainers.weight }} كغ</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-sm-3">
+                                <p class="mb-0"><i class="fas fa-clock me-2"></i>تاريخ الانخراط</p>
+                            </div>
+                            <div class="col-sm-9">
+                                <p class="text-muted mb-0">{{ trainers.started_day }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="addPaymentModalLabel"><i class="fas fa-money-bill-wave me-2"></i>إضافة دفعة</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form method="POST" action="">
+                                {% csrf_token %}
+                                <input type="hidden" name="trainer" value="{{ trainers.id }}">
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label for="paymentdate" class="form-label">تاريخ الدفع:</label>
+                                        <input type="date" name="paymentdate" id="paymentdate" class="form-control" required>
+                                    </div>
+                            
+                                    <div class="mb-3">
+                                        <label class="form-label">فئة الدفع:</label>
+                                        <div class="form-check">
+                                            <input type="checkbox" name="paymentCategry[]" value="month" class="form-check-input" id="month">
+                                            <label class="form-check-label mr-4" for="month" >شهرية  </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" name="paymentCategry[]" value="subscription" class="form-check-input" id="subscription">
+                                            <label class="form-check-label mr-4" for="subscription">انخراط  </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" name="paymentCategry[]" value="assurance" class="form-check-input" id="assurance">
+                                            <label class="form-check-label mr-4" for="assurance">التأمين  </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" name="paymentCategry[]" value="jawaz" class="form-check-input" id="jawaz">
+                                            <label class="form-check-label mr-4" for="jawaz">جواز  </label>
+                                        </div>
+                                    </div>
+                            
+                                    
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                    <button type="submit" class="btn btn-primary">إضافة</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <!-- Payment Status Card -->
+                 <div class="jawaz-payments">
+                    {% if jawaz %}
+                    <div class="card mb-4  text-primary">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>حالة الدفع الجواز</h5>
+                        </div>
+                        
+                        {% for jawa in jawaz %}
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <p class="mb-0"><i class="fas fa-calendar-alt me-2"></i>تاريخ الدفع</p>
+                                </div>
+                                <div class="col-sm-9">
+                                    <p class="text-muted mb-0">{{ jawa.paymentdate }}</p>
+                                </div>
+                            </div>
+                            <hr>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <p class="text-center text-muted">
+                            <i class="fas fa-info-circle me-2"></i>لم يتم دفع جواز لهذا المتدرب حتى الآن.
+                        </p>
+                        {% endif %}
+
+                                    
+                 </div>
+                 <div class="assurance-payments">
+                    {% if assurance %}
+                    <div class="card mb-4 text-warning">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>حالة الدفع التأمين</h5>
+                        </div>
+                        {% for assuranc in assurance %}
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <p class="mb-0"><i class="fas fa-calendar-alt me-2"></i>تاريخ الدفع</p>
+                                </div>
+                                <div class="col-sm-9">
+                                    <p class="text-muted mb-0">{{ assuranc.paymentdate }}</p>
+                                </div>
+                            </div>
+                            <hr>
+
+                        </div>
+                    
+                        {% endfor %}
+                        {% else %}
+                        <p class="text-center text-muted">
+                            <i class="fas fa-info-circle me-2"></i>لم يتم دفع تأمين لهذا المتدرب حتى الآن.
+                        </p>
+                        {% endif %}
+                    
+                </div>
+                <div class="subscription-payments">
+                    {% if subscription %}
+                    <div class="card mb-4 text-secondary">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>حالة الدفع الانخراط</h5>
+                        </div>
+                        {% for subscrip in subscription %}
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <p class="mb-0"><i class="fas fa-calendar-alt me-2"></i>تاريخ الدفع</p>
+                                </div>
+                                <div class="col-sm-9">
+                                    <p class="text-muted mb-0">{{ subscrip.paymentdate }}</p>
+                                </div>
+                            </div>
+                            <hr>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <p class="text-center text-muted">
+                            <i class="fas fa-info-circle me-2"></i>لم يتم دفع انخراط لهذا المتدرب حتى الآن.
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>حالة الدفع الاشهر</h5>
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPaymentModal">إضافة دفعة</button>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-4">
+                            <i class="fas fa-circle text-success me-2"></i>الأشهر المدفوعة
+                            <i class="fas fa-circle text-danger me-2 ms-4"></i>الأشهر غير المدفوعة
+                        </p>
+                        
+                        <div class="row">
+                            {% for payment in payment_status %}
+                            <div class="col-md-4 mb-3">
+                                <p class="mb-1 small">
+                                    {% if payment.status == 'paid' %}
+                                    {{ payment.month }} (مدفوع)
+                                    {% else %}
+                                    {{ payment.month }} (غير مدفوع)
+                                    {% endif %}
+                                </p>
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar {% if payment.status == 'paid' %}bg-success{% else %}bg-danger{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: 100%">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activities Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-calendar-check me-2"></i>الفعاليات التي شارك بها</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if articles %}
+                            <div class="row">
+                                {% for article in articles %}
+                                <div class="col-md-6 col-lg-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title text-primary">
+                                                <i class="fas fa-star me-2"></i>{{ article.title }}
+                                            </h6>
+                                            <p class="card-text">
+                                                <i class="fas fa-calendar me-2"></i><strong>التاريخ:</strong> {{ article.date|date:"d-m-Y" }}<br>
+                                                <i class="fas fa-map-marker-alt me-2"></i><strong>الموقع:</strong> {{ article.location }}<br>
+                                                <i class="fas fa-info-circle me-2"></i><strong>النشاط:</strong> {{ article.title }}
+                                            </p>
+                                            <a href="{% url 'article_detail' article.id %}" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye me-1"></i>عرض المزيد
+                                            </a>
+                                        </div>
+                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-center text-muted">
+                                <i class="fas fa-info-circle me-2"></i>لا توجد فعاليات مرتبطة بهذا المتدرب حتى الآن.
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Script -->
+<script>
+function confirmDelete(trainerId) {
+    if (confirm("هل أنت متأكد أنك تريد حذف هذا المتدرب؟")) {
+        window.location.href = `/delete_trainer/${trainerId}/`;
+    }
+}
+
+</script>
+{% endblock %}

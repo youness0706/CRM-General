@@ -1,0 +1,39 @@
+{% extends 'base/base.html' %}
+{% block title %}
+    نجاح العملية
+{% endblock %}
+{% load static %}
+{% block content %}
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap');
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+        }
+        
+        
+        
+        .success-card {
+            transition: transform 0.3s ease;
+        }
+        
+        .success-card:hover {
+            transform: translateY(-5px);
+        }
+
+        </style>
+
+    <div class="container min-vh-100 d-flex align-items-center justify-content-center">
+        <div class="card success-card border-0 shadow-sm" style="max-width: 400px;">
+            <div class="card-body text-center p-5">
+                <div class="success-icon mb-4">
+                    <div class="checkmark">
+                        <img src="{% static 'images/gifs/checked.gif' %}" alt="">
+                    </div>
+                </div>
+                <h4 class="card-title mb-3 text-success">تمت العملية بنجاح</h4>
+                <p class="card-text text-muted">شكراً لك</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
