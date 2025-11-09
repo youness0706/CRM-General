@@ -458,7 +458,7 @@ def payments_history(request):
 @login_required(login_url='/login/')
 @require_organization
 def payments_del(request,id):
-        org=require_organization
+        org=request.organization
         Payments.objects.get(organization=org, pk=id).delete()
         return redirect("payments_history")
 
