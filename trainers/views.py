@@ -288,37 +288,82 @@ def Home(request):
 """
 
 
+def addme(request, org_slug):
+    """
+    Public registration page - organization identified by URL slug
+    URL: /register/nojoum-arkana/
+    """
+    # Get organization from URL slug
+    organization = get_object_or_404(OrganizationInfo, slug=org_slug)
+    
+    # Check if organization has reached trainer limit
+    if organization.trainers.filter(is_active=True).count() >= organization.max_trainers:
+        return render(request, "pages/registration_closed.html", {
+            'organization': organization,
+            'message': 'عذراً، لقد وصلت الجمعية للحد الأقصى من المتدربين'
+        })
+    
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        birthday = request.POST.get('birthday')
+        gender = request.POST.get('gender')
+        phone = request.POST.get('phone', '') or ''
+        phone_parent = request.POST.get('phone_parent', '') or ''
+        email = request.POST.get('email', 'None@emale.com')
+        address = request.POST.get('address', 'Argana')
+        cin = request.POST.get('cin', '')
+        education = request.POST.get('education')
+        belt = request.POST.get('belt')
+        upload = request.FILES.get('upload')
+        category = request.POST.get('category')
+        height = request.POST.get('height') or 0
+        weight = request.POST.get('weight') or 0
+
+        if first_name and last_name and birthday and gender and education and category and cin:
+            # Check if trainer already exists in THIS organization
+            if Trainer.objects.filter(
+                organization=organization,
+                first_name=first_name,
+                last_name=last_name
+            ).exists():
+                messages.error(request, "المتدرب موجود بالفعل في النظام.")
+                return render(request, "pages/addme.html", {'organization': organization})
+            
+            # Create trainer for this specific organization
+            Trainer.objects.create(
+                organization=organization,  # CRITICAL!
+                first_name=first_name,
+                last_name=last_name,
+                birth_day=birthday,
+                phone=phone,
+                phone_parent=phone_parent,
+                email=email,
+                address=address,
+                CIN=cin,
+                male_female=gender,
+                belt_degree=belt,
+                Degree=education,
+                category=category,
+                started_day=datetime.today(),
+                image=upload,
+                tall=height,
+                weight=weight
+            )
+            
+            message = f"تمت إضافة المتدرب {first_name} إلى {organization.name} بنجاح"
+            return render(request, "pages/sucss.html",{
+                "org":organization
+            })
+        else:
+            messages.error(request, "الرجاء ملء جميع الحقول المطلوبة.")
+    
+    return render(request, "pages/addme.html", {'organization': organization})
+
+
 def addmedone(request):
-    return render(request,"pages/done.html")
-
-def addme(request):
-        first_name=None; last_name=None; birthday=None; gender=None; phone=None; email='NULL'; category=None; cin=None;upload=None
-        if request.method == 'POST':
-            first_name = request.POST.get('first_name')
-            last_name = request.POST.get('last_name')
-            birthday = request.POST.get('birthday')
-            gender = request.POST.get('gender')
-            phone = request.POST.get('phone',0) 
-            phone_parent = request.POST.get('phone_parent',0) or 0
-            email = request.POST.get('email','None@emale.com')
-            address = request.POST.get('address','Argana')
-            cin = request.POST.get('cin')
-            education = request.POST.get('education')
-            belt = request.POST.get('belt')
-            if 'upload' in request.FILES:upload = request.FILES['upload']
-            category = request.POST.get('category')
-            height = request.POST.get('height',0) or 0
-            weight = request.POST.get('weight',0) or 0
-
-            if first_name and last_name and birthday and gender and education and category and cin:
-                Trainer(first_name=first_name,last_name=last_name,birth_day=birthday,phone=phone,email=email,
-                        address=address,CIN=cin, male_female=gender,belt_degree=belt,Degree=education,category=category,
-                        started_day=datetime.today(),image=upload,tall=height,weight=weight,phone_parent=phone_parent
-                        ).save()
-                message = "تمت إضافة المتدرب "+ first_name +" بنجاح"
-                return render(request,"pages/addmedone.html",{'message':message})
-        return render(request,"pages/addme.html")
-
+    """Success page after registration"""
+    return render(request, "pages/sucss.html")
 
 @login_required(login_url='/login/')
 @require_organization

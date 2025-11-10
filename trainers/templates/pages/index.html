@@ -632,7 +632,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 function copyLink(){
-    const link = "{{ request.scheme }}://{{ request.get_host }}{% url 'addmegym' %}";
+    const link = "{{ request.scheme }}://{{ request.get_host }}{% url 'addme' request.organization.slug %}";
     navigator.clipboard.writeText(link).then(() => {
       // Enhanced notification
       const toast = document.createElement('div');
