@@ -308,11 +308,11 @@ def addme(request, org_slug):
         last_name = request.POST.get('last_name')
         birthday = request.POST.get('birthday')
         gender = request.POST.get('gender')
-        phone = request.POST.get('phone', '') or ''
-        phone_parent = request.POST.get('phone_parent', '') or ''
+        phone = request.POST.get('phone', '0') or ''
+        phone_parent = request.POST.get('phone_parent', '0') or ''
         email = request.POST.get('email', 'None@emale.com')
         address = request.POST.get('address', 'Argana')
-        cin = request.POST.get('cin', '')
+        cin = request.POST.get('cin', 'None')
         education = request.POST.get('education')
         belt = request.POST.get('belt')
         upload = request.FILES.get('upload')
