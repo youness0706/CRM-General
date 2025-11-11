@@ -1,7 +1,5 @@
 {% load static %}
 
-
-
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
@@ -32,7 +30,6 @@
                         <li><a class="dropdown-item" href="{% url 'trainees' 'all' %}">الكل</a></li><hr>
                         <li><a class="dropdown-item" href="{% url 'add_trainee' %}">اضافة متدرب جديد</a></li><hr>
                         <li><a class="dropdown-item" href="{% url 'add_women' %}">اضافة امرأة</a></li>
-
                     </ul>
                 </li>
                 <li class="nav-item dropdown">
@@ -49,19 +46,20 @@
                     </ul>
                 </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle " href="#" id="traineesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle " href="#" id="paymentsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         دفعات
                     </a>
-                    <ul class="dropdown-menu text-right" aria-labelledby="traineesDropdown">
+                    <ul class="dropdown-menu text-right" aria-labelledby="paymentsDropdown">
                         <li><a class=" bg-success dropdown-item active" aria-current="page" href="{% url 'add_payment' %}">اضافة دفعة جديدة</a></li>
                         <li><a class="dropdown-item" href="{% url 'payments_history' %}">أرشيف الدفعات</a></li>
                         <li><a class="dropdown-item" href="{% url 'unpaid_trainees' %}"> الذين لم يدفعوا</a></li>
                     </ul>
                 </li>
-                {% if user.is_superuser %}
+                
+                {# Only admins see financial menu #}
+                {% if is_admin %}
                 <li class="nav-item dropdown">
-
-                    <a class="nav-link dropdown-toggle"  id="financialDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle" id="financialDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         المالية
                     </a>
                     <ul class="dropdown-menu text-right" aria-labelledby="financialDropdown">
@@ -73,26 +71,50 @@
                     </ul>
                 </li>
                 {% else %}
-                <li><a class="nav-link active" href="{% url 'logout' %}">تسجيل الخروج</a></li>
+                {# Non-admin users only see logout #}
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link active" href="{% url 'logout' %}">تسجيل الخروج</a>
+                </li>
+                {% endif %}
                 {% endif %}
 
             </ul>
-            {% if user.is_superuser %}
+            
+            {# Admin dropdown - only for admin users #}
+            {% if is_admin %}
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <!--img src="https://github.com/mdo.png" alt="User" width="30" height="30" class="rounded-circle">-->
-                        <span class="ms-1">الجمعية</span>
+                        <i class="fas fa-user-circle"></i>
+                        <span class="ms-1">
+                            {% if staff_member %}{{ staff_member.user.get_full_name|default:staff_member.user.username }}{% else %}المدير{% endif %}
+                        </span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end text-right">
-                        <li><a class="dropdown-item" href="{% url 'add_staff' %}">موظف جديد</a></li>
-                        <li><a class="dropdown-item" href="{% url 'staff_list' %}">معلومات الجمعية</a></li>
+                        <li>
+                            <div class="dropdown-header">
+                                <strong>{{ staff_member.role|default:"مدير" }}</strong>
+                                {% if request.organization %}
+                                <br><small class="text-muted">{{ request.organization.name }}</small>
+                                {% endif %}
+                            </div>
+                        </li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{% url 'logout' %}">تسجيل الخروج</a></li>
+                        <li><a class="dropdown-item" href="{% url 'add_staff' %}">
+                            <i class="fas fa-user-plus"></i> موظف جديد
+                        </a></li>
+                        <li><a class="dropdown-item" href="{% url 'staff_list' %}">
+                            <i class="fas fa-building"></i> معلومات الجمعية
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">
+                            <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                        </a></li>
                     </ul>
-            {% endif %}
                 </li>
             </ul>
+            {% endif %}
         </div>
     </div>
 </nav>
