@@ -29,9 +29,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", get_random_secret_key())
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False") == "True"
 
-DEVELOPMENT_MODE = True
+DEVELOPMENT_MODE = os.getenv("DEVELOPMENT_MODE", "False") == "True"
 
 ALLOWED_HOSTS = ['*']
 
@@ -151,35 +151,35 @@ MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 CKEDITOR_BASEPATH = "/static/ckeditor/"
 
 #Digital Ocean Spaces
-if not DEVELOPMENT_MODE:
-    STORAGES = {
-        "default": {
-            "BACKEND": "storages.backends.s3.S3Storage",
-            "OPTIONS": {
-                "secret_key":os.environ.get("SECRET_KEY"),
-                "access_key":os.environ.get("ACCESS_KEY"),
-                "bucket_name":"nojoum",
-                "endpoint_url":"https://nyc3.digitaloceanspaces.com",
-                "location":"media",
-                "default_acl":"public-read",
-                "custom_domain":"media.nojoumargana.site",
-                
-            },
-        },
 
-        "staticfiles": {
-            "BACKEND": "storages.backends.s3.S3Storage",
-            "OPTIONS": {
-                "secret_key":os.environ.get("SECRET_KEY"),
-                "access_key":os.environ.get("ACCESS_KEY"),
-                "bucket_name":"nojoum",
-                "endpoint_url":"https://nyc3.digitaloceanspaces.com",
-                "location":"static",
-                "default_acl":"public-read",
-                
-            },
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "secret_key":os.environ.get("SECRET_KEY"),
+            "access_key":os.environ.get("ACCESS_KEY"),
+            "bucket_name":"nojoum",
+            "endpoint_url":"https://nyc3.digitaloceanspaces.com",
+            "location":"media",
+            "default_acl":"public-read",
+            "custom_domain":"media.nojoumargana.site",
+             
         },
-    }
+    },
+
+    "staticfiles": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "secret_key":os.environ.get("SECRET_KEY"),
+            "access_key":os.environ.get("ACCESS_KEY"),
+            "bucket_name":"nojoum",
+            "endpoint_url":"https://nyc3.digitaloceanspaces.com",
+            "location":"static",
+            "default_acl":"public-read",
+             
+        },
+    },
+}
 
 
 # Default primary key field type
@@ -212,5 +212,4 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'youness.bouhnif.84@edu.uiz.ac.ma'
-EMAIL_HOST_PASSWORD = 'JM1205840000.'
-
+EMAIL_HOST_PASSWORD = 'JM120584000.'

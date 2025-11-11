@@ -311,7 +311,7 @@ def addme(request, org_slug):
         phone = request.POST.get('phone', '0') or ''
         phone_parent = request.POST.get('phone_parent', '0') or ''
         email = request.POST.get('email', 'None@emale.com')
-        address = request.POST.get('address', 'Argana')
+        address = request.POST.get('address', 'None')
         cin = request.POST.get('cin', 'None')
         education = request.POST.get('education')
         belt = request.POST.get('belt')
