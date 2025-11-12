@@ -102,10 +102,11 @@ class Trainer(models.Model):
     )
 
     CatChoices = (
-        ("small", "الصغار"),
-        ("med", "فتيان"),
-        ("big", "كبار"),
-        ('women', 'نساء')
+        ("الصغار", "الصغار"),
+        ("فتيان", "فتيان"),
+        ("كبار", "كبار"),
+        ('نساء', 'نساء'),
+        ("شبان", "الشبان"),
     )
     
     first_name = models.CharField(max_length=255, verbose_name='الاسم الأول')
