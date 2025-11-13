@@ -122,11 +122,11 @@
                 <div class="col-md-6 mb-3">
                     <label for="category" class="form-label">الفئة</label>
                     <select class="form-select" id="category" name="category" required>
-                        <option value="small" {% if trainee.category == "الصغار" %}selected{% endif %}>الصغار</option>
-                        <option value="med" {% if trainee.category == "فتيان" %}selected{% endif %}>الفتيان</option>
-                        <option value="big" {% if trainee.category == "كبار" %}selected{% endif %}>الكبار</option>
-                        <option value="women" {% if trainee.category == "نساء" %}selected{% endif %}>النساء</option>
-                        <option value="شباب" {% if trainee.category == "شبان" %}selected{% endif %}>الشبان</option>
+                        <option value="الصغار" {% if trainee.category == "الصغار" %}selected{% endif %}>الصغار</option>
+                        <option value="فتيان" {% if trainee.category == "فتيان" %}selected{% endif %}>الفتيان</option>
+                        <option value="كبار" {% if trainee.category == "كبار" %}selected{% endif %}>الكبار</option>
+                        <option value="نساء" {% if trainee.category == "نساء" %}selected{% endif %}>النساء</option>
+                        <option value="شبان" {% if trainee.category == "شبان" %}selected{% endif %}>الشبان</option>
                     </select>
                 </div>
             </div>

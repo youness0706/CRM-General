@@ -106,7 +106,7 @@ class Trainer(models.Model):
         ("فتيان", "فتيان"),
         ("كبار", "كبار"),
         ('نساء', 'نساء'),
-        ("شبان", "الشبان"),
+        ("شبان", "شبان"),
     )
     
     first_name = models.CharField(max_length=255, verbose_name='الاسم الأول')

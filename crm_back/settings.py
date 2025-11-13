@@ -29,9 +29,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", get_random_secret_key())
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = True
 
-DEVELOPMENT_MODE = os.getenv("DEVELOPMENT_MODE", "False") == "True"
+DEVELOPMENT_MODE = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -152,35 +152,35 @@ MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 CKEDITOR_BASEPATH = "/static/ckeditor/"
 
 #Digital Ocean Spaces
-
-STORAGES = {
-    "default": {
-        "BACKEND": "storages.backends.s3.S3Storage",
-        "OPTIONS": {
-            "secret_key":os.environ.get("SECRET_KEY"),
-            "access_key":os.environ.get("ACCESS_KEY"),
-            "bucket_name":"nojoum",
-            "endpoint_url":"https://nyc3.digitaloceanspaces.com",
-            "location":"media",
-            "default_acl":"public-read",
-            "custom_domain":"media.nojoumargana.site",
-             
+if not DEVELOPMENT_MODE:
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "secret_key":os.environ.get("SECRET_KEY"),
+                "access_key":os.environ.get("ACCESS_KEY"),
+                "bucket_name":"nojoum",
+                "endpoint_url":"https://nyc3.digitaloceanspaces.com",
+                "location":"media",
+                "default_acl":"public-read",
+                "custom_domain":"media.nojoumargana.site",
+                
+            },
         },
-    },
 
-    "staticfiles": {
-        "BACKEND": "storages.backends.s3.S3Storage",
-        "OPTIONS": {
-            "secret_key":os.environ.get("SECRET_KEY"),
-            "access_key":os.environ.get("ACCESS_KEY"),
-            "bucket_name":"nojoum",
-            "endpoint_url":"https://nyc3.digitaloceanspaces.com",
-            "location":"static",
-            "default_acl":"public-read",
-             
+        "staticfiles": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "secret_key":os.environ.get("SECRET_KEY"),
+                "access_key":os.environ.get("ACCESS_KEY"),
+                "bucket_name":"nojoum",
+                "endpoint_url":"https://nyc3.digitaloceanspaces.com",
+                "location":"static",
+                "default_acl":"public-read",
+                
+            },
         },
-    },
-}
+    }
 
 
 # Default primary key field type
