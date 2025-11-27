@@ -139,7 +139,26 @@
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary mt-4 w-100">إرسال</button>
+        <!-- Add this section before the submit button -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <h5 class="text-secondary mb-3">الوثائق (اختياري)</h5>
+            </div>
+            <div class="col-md-6 mt-3">
+                <label for="national_id_doc">نسخة البطاقة الوطنية</label>
+                <input type="file" id="national_id_doc" name="national_id_doc" 
+                    accept=".pdf,.jpg,.jpeg,.png" class="form-control">
+                <small class="text-muted">PDF, JPG, PNG (الحد الأقصى 5MB)</small>
+            </div>
+            <div class="col-md-6 mt-3">
+                <label for="civil_status_doc">نسخة الحالة المدنية</label>
+                <input type="file" id="civil_status_doc" name="civil_status_doc" 
+                    accept=".pdf,.jpg,.jpeg,.png" class="form-control">
+                <small class="text-muted">PDF, JPG, PNG (الحد الأقصى 5MB)</small>
+            </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-4 w-100">إرسال</button>
     </form>
 
 </div>

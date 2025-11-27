@@ -161,6 +161,37 @@ class Trainer(models.Model):
     def get_belt_choices():
         return Trainer.belts
 
+class TrainerDocument(models.Model):
+    DOC_TYPES = (
+        ('بطاقة الوطنية', 'بطاقة الوطنية'),
+        ('الحالة المدنية', 'الحالة المدنية'),
+        ('وثيقة أخرى', 'وثيقة أخرى'),
+    )
+    
+    trainer = models.ForeignKey(
+        Trainer,
+        on_delete=models.CASCADE,
+        related_name='documents',
+        verbose_name='المتدرب'
+    )
+    document_type = models.CharField(
+        max_length=20,
+        choices=DOC_TYPES,
+        verbose_name='نوع الوثيقة'
+    )
+    file = models.FileField(
+        upload_to='organizations/{instance.organization.slug}/trainees/documents/',
+        verbose_name='الملف'
+    )
+    uploaded_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='تاريخ الرفع'
+    )
+    
+    class Meta:
+        verbose_name = 'وثيقة متدرب'
+        verbose_name_plural = 'وثائق المتدربين'
+        unique_together = ['trainer', 'document_type']
 
 class Payments(models.Model):
     """Payment records scoped to organization"""
@@ -325,3 +356,4 @@ class Emailed(models.Model):
 
     def __str__(self):
         return f"{self.user.full_name} - {self.category}"
+    

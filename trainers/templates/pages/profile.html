@@ -374,7 +374,107 @@
 </div>
 
 <!-- Delete Confirmation Script -->
+ <!-- Documents Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>الوثائق المرفقة</h5>
+            </div>
+            <div class="card-body">
+                {% if docs %}
+                    <div class="row">
+                        {% for doc in docs %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body">
+                                    <h6 class="card-title text-primary">
+                                        <i class="fas fa-file-pdf me-2"></i>{{ doc.document_type }}
+                                    </h6>
+                                    <p class="card-text small text-muted">
+                                        <i class="fas fa-calendar me-2"></i>تاريخ الرفع: {{ doc.uploaded_at|date:"d-m-Y H:i" }}
+                                    </p>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ doc.file.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye me-1"></i>عرض
+                                        </a>
+                                        <a href="{{ doc.file.url }}" download class="btn btn-outline-success btn-sm">
+                                            <i class="fas fa-download me-1"></i>تحميل
+                                        </a>
+                                        <button onclick="confirmDeleteDoc({{ doc.id }})" class="btn btn-outline-danger btn-sm">
+                                            <i class="fas fa-trash me-1"></i>حذف
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">لا توجد وثائق مرفقة لهذا المتدرب حتى الآن.</p>
+                    </div>
+                {% endif %}
+                
+                <!-- Upload New Document Form -->
+                <div class="mt-4">
+                    <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#uploadDocForm">
+                        <i class="fas fa-plus me-2"></i>إضافة وثيقة جديدة
+                    </button>
+                    
+                    <div class="collapse mt-3" id="uploadDocForm">
+                        <div class="card">
+                            <div class="card-body">
+                                <form method="POST" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="upload_document">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="document_type" class="form-label">نوع الوثيقة</label>
+                                            <select name="document_type" id="document_type" class="form-select" required>
+                                                <option value="">اختر نوع الوثيقة</option>
+                                                <option value="بطاقة الوطنية">بطاقة الوطنية</option>
+                                                <option value="الحالة المدنية">الحالة المدنية</option>
+                                                <option value="وثيقة أخرى">وثيقة أخرى</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="document_file" class="form-label">الملف</label>
+                                            <input type="file" name="document_file" id="document_file" 
+                                                   class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                                            <small class="text-muted">PDF, JPG, PNG (الحد الأقصى 5MB)</small>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-upload me-2"></i>رفع الوثيقة
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+function confirmDeleteDoc(docId) {
+    if (confirm("هل أنت متأكد أنك تريد حذف هذه الوثيقة؟")) {
+        // Create a form and submit it
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.innerHTML = `
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_document">
+            <input type="hidden" name="doc_id" value="${docId}">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
+};
+
 function confirmDelete(trainerId) {
     if (confirm("هل أنت متأكد أنك تريد حذف هذا المتدرب؟")) {
         window.location.href = `/delete_trainer/${trainerId}/`;

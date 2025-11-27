@@ -287,13 +287,11 @@ def Home(request):
 
 """
 
-
 def addme(request, org_slug):
     """
     Public registration page - organization identified by URL slug
     URL: /register/nojoum-arkana/
     """
-    # Get organization from URL slug
     organization = get_object_or_404(OrganizationInfo, slug=org_slug)
     
     # Check if organization has reached trainer limit
@@ -319,6 +317,10 @@ def addme(request, org_slug):
         category = request.POST.get('category')
         height = request.POST.get('height') or 0
         weight = request.POST.get('weight') or 0
+        
+        # Get document files
+        national_id_doc = request.FILES.get('national_id_doc')
+        civil_status_doc = request.FILES.get('civil_status_doc')
 
         if first_name and last_name and birthday and gender and education and category and cin:
             # Check if trainer already exists in THIS organization
@@ -331,8 +333,8 @@ def addme(request, org_slug):
                 return render(request, "pages/addme.html", {'organization': organization})
             
             # Create trainer for this specific organization
-            Trainer.objects.create(
-                organization=organization,  # CRITICAL!
+            trainer = Trainer.objects.create(
+                organization=organization,
                 first_name=first_name,
                 last_name=last_name,
                 birth_day=birthday,
@@ -351,15 +353,29 @@ def addme(request, org_slug):
                 weight=weight
             )
             
+            # Handle document uploads (optional)
+            if national_id_doc:
+                TrainerDocument.objects.create(
+                    trainer=trainer,
+                    document_type='بطاقة الوطنية',
+                    file=national_id_doc
+                )
+            
+            if civil_status_doc:
+                TrainerDocument.objects.create(
+                    trainer=trainer,
+                    document_type='الحالة المدنية',
+                    file=civil_status_doc
+                )
+            
             message = f"تمت إضافة المتدرب {first_name} إلى {organization.name} بنجاح"
-            return render(request, "pages/sucss.html",{
-                "org":organization
+            return render(request, "pages/sucss.html", {
+                "org": organization
             })
         else:
             messages.error(request, "الرجاء ملء جميع الحقول المطلوبة.")
     
     return render(request, "pages/addme.html", {'organization': organization})
-
 
 def addmedone(request):
     """Success page after registration"""
@@ -386,42 +402,77 @@ def export_data(request, category):
     return response
 @login_required(login_url='/login/')
 def add_trainee(request):
-        organization = request.organization
-        first_name=None; last_name=None; birthday=None; gender=None; phone=None; email='NULL'; category=None; cin=None;upload=None
-        if request.method == 'POST':
-            first_name = request.POST.get('first_name')
-            last_name = request.POST.get('last_name')
-            birthday = request.POST.get('birthday')
-            gender = request.POST.get('gender')
-            phone = request.POST.get('phone',0) 
-            phone_parent = request.POST.get('phone_parent',0) or 0
-            email = request.POST.get('email','None@emale.com')
-            address = request.POST.get('address','Argana')
-            cin = request.POST.get('cin','لا يوجد')
-            education = request.POST.get('education')
-            belt = request.POST.get('belt')
-            if 'upload' in request.FILES:upload = request.FILES['upload']
-            category = request.POST.get('category')
-            height = request.POST.get('height',0) or 0
-            weight = request.POST.get('weight',0) or 0
+    organization = request.organization
+    
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        birthday = request.POST.get('birthday')
+        gender = request.POST.get('gender')
+        phone = request.POST.get('phone', 0) 
+        phone_parent = request.POST.get('phone_parent', 0) or 0
+        email = request.POST.get('email', 'None@emale.com')
+        address = request.POST.get('address', 'Argana')
+        cin = request.POST.get('cin', 'لا يوجد')
+        education = request.POST.get('education')
+        belt = request.POST.get('belt')
+        upload = request.FILES.get('upload')
+        category = request.POST.get('category')
+        height = request.POST.get('height', 0) or 0
+        weight = request.POST.get('weight', 0) or 0
+        
+        # Get document files
+        national_id_doc = request.FILES.get('national_id_doc')
+        civil_status_doc = request.FILES.get('civil_status_doc')
 
-            if first_name and last_name and birthday and gender and education and category :
-                if Trainer.objects.filter(organization=organization,first_name=first_name, last_name=last_name).exists():
-                    messages.error(request, "المتدرب موجود بالفعل.")
-                    return render(request, "pages/add_trainee.html")
-                # Create a new Trainer instance and save it
-                else:
-                    Trainer(organization=organization,first_name=first_name,last_name=last_name,birth_day=birthday,phone=phone,email=email,
-                        address=address,CIN=cin, male_female=gender,belt_degree=belt,Degree=education,category=category,
-                        started_day=datetime.today(),image=upload,tall=height,weight=weight,phone_parent=phone_parent
-                        ).save()
-                messages.success(request, "تمت إضافة المتدرب "+ first_name +" بنجاح")
+        if first_name and last_name and birthday and gender and education and category:
+            if Trainer.objects.filter(organization=organization, first_name=first_name, last_name=last_name).exists():
+                messages.error(request, "المتدرب موجود بالفعل.")
+                return render(request, "pages/add_trainee.html")
             else:
-                messages.error(request, "فشلت عملية الإضافة.")
-        if 'add_women' in request.path:
-            return render(request,"pages/add_women.html")
-        return render(request,"pages/add_trainee.html")
-
+                # Create trainer
+                trainer = Trainer.objects.create(
+                    organization=organization,
+                    first_name=first_name,
+                    last_name=last_name,
+                    birth_day=birthday,
+                    phone=phone,
+                    email=email,
+                    address=address,
+                    CIN=cin,
+                    male_female=gender,
+                    belt_degree=belt,
+                    Degree=education,
+                    category=category,
+                    started_day=datetime.today(),
+                    image=upload,
+                    tall=height,
+                    weight=weight,
+                    phone_parent=phone_parent
+                )
+                
+                # Handle document uploads (optional)
+                if national_id_doc:
+                    TrainerDocument.objects.create(
+                        trainer=trainer,
+                        document_type='بطاقة الوطنية',
+                        file=national_id_doc
+                    )
+                
+                if civil_status_doc:
+                    TrainerDocument.objects.create(
+                        trainer=trainer,
+                        document_type='الحالة المدنية',
+                        file=civil_status_doc
+                    )
+                
+                messages.success(request, "تمت إضافة المتدرب " + first_name + " بنجاح")
+        else:
+            messages.error(request, "فشلت عملية الإضافة.")
+    
+    if 'add_women' in request.path:
+        return render(request, "pages/add_women.html")
+    return render(request, "pages/add_trainee.html")
 
 @login_required(login_url='/login/')
 @require_organization
@@ -848,27 +899,69 @@ def add_pay_from_prof(request,id,category,date):
 @require_organization
 def trainee_profile(request, id):
     organization = request.organization
+    trainer = get_object_or_404(Trainer, pk=id, organization=organization)
+    
     if request.method == 'POST':
+        # Handle document upload
+        if request.POST.get('action') == 'upload_document':
+            document_type = request.POST.get('document_type')
+            document_file = request.FILES.get('document_file')
+            
+            if document_type and document_file:
+                # Check if document type already exists
+                existing_doc = TrainerDocument.objects.filter(
+                    trainer=trainer,
+                    document_type=document_type
+                ).first()
+                
+                if existing_doc:
+                    # Update existing document
+                    existing_doc.file = document_file
+                    existing_doc.save()
+                    messages.success(request, f"تم تحديث {document_type} بنجاح")
+                else:
+                    # Create new document
+                    TrainerDocument.objects.create(
+                        trainer=trainer,
+                        document_type=document_type,
+                        file=document_file
+                    )
+                    messages.success(request, f"تم رفع {document_type} بنجاح")
+            else:
+                messages.error(request, "الرجاء اختيار نوع الوثيقة والملف")
         
-        if 'paymentCategry[]' in request.POST and request.POST['paymentdate']:
-            # Get all selected payment categories
+        # Handle document deletion
+        elif request.POST.get('action') == 'delete_document':
+            doc_id = request.POST.get('doc_id')
+            try:
+                doc = TrainerDocument.objects.get(id=doc_id, trainer=trainer)
+                doc_type = doc.document_type
+                doc.file.delete()  # Delete the file from storage
+                doc.delete()  # Delete the database record
+                messages.success(request, f"تم حذف {doc_type} بنجاح")
+            except TrainerDocument.DoesNotExist:
+                messages.error(request, "الوثيقة غير موجودة")
+        
+        # Handle payment addition
+        elif 'paymentCategry[]' in request.POST and request.POST.get('paymentdate'):
             payment_categories = request.POST.getlist('paymentCategry[]')
             payment_date = request.POST['paymentdate']
             
-            # Create a payment record for each selected category
             for category in payment_categories:
-                add_pay_from_prof(request, id, category, payment_date)  
+                add_pay_from_prof(request, id, category, payment_date)
             
+            messages.success(request, "تمت إضافة الدفعات بنجاح")
+    
     # Get all payments for the trainee
-    trainee_payments = Payments.objects.filter(organization=organization,trainer_id=id).order_by("paymentdate")  # Adjust as needed
-    articles = Article.objects.filter(organization=organization,trainees = Trainer.objects.get(pk=id))
-
+    trainee_payments = Payments.objects.filter(organization=organization, trainer_id=id).order_by("paymentdate")
+    articles = Article.objects.filter(organization=organization, trainees=trainer)
+    docs = TrainerDocument.objects.filter(trainer_id=id).order_by('-uploaded_at')
+    
     # Determine the range of months
     if trainee_payments.exists():
         first_payment_date = trainee_payments.first().paymentdate
         start_month = datetime(first_payment_date.year, first_payment_date.month, 1)
     else:
-        # Default to current month if no payments exist
         start_month = datetime(datetime.now().year, datetime.now().month, 1)
 
     # Generate months from the first payment to the current month
@@ -876,14 +969,15 @@ def trainee_profile(request, id):
     months = []
     while start_month <= current_month:
         months.append(start_month.strftime("%Y-%m"))
-        # Move to the next month
         if start_month.month == 12:
             start_month = datetime(start_month.year + 1, 1, 1)
         else:
             start_month = datetime(start_month.year, start_month.month + 1, 1)
-    jawaz = Payments.objects.filter(trainer_id=id,paymentCategry='jawaz')
-    assurance = Payments.objects.filter(trainer_id=id,paymentCategry='assurance')
-    subscription = Payments.objects.filter(trainer_id=id,paymentCategry='subscription')
+    
+    jawaz = Payments.objects.filter(trainer_id=id, paymentCategry='jawaz')
+    assurance = Payments.objects.filter(trainer_id=id, paymentCategry='assurance')
+    subscription = Payments.objects.filter(trainer_id=id, paymentCategry='subscription')
+    
     # Track paid months
     paid_months = {payment.paymentdate.strftime("%Y-%m") for payment in trainee_payments.filter(paymentCategry='month')}
 
@@ -893,8 +987,15 @@ def trainee_profile(request, id):
         for month in months
     ]
 
-    return render(request, "pages/profile.html", {"payment_status": payment_status,"trainers":Trainer.objects.get(pk=id),'articles':articles,'jawaz':jawaz,'assurance':assurance,'subscription':subscription})
-
+    return render(request, "pages/profile.html", {
+        "payment_status": payment_status,
+        "trainers": trainer,
+        'articles': articles,
+        'jawaz': jawaz,
+        'assurance': assurance,
+        'subscription': subscription,
+        'docs': docs
+    })
 @login_required(login_url='/login/')
 @require_organization
 def delete_trainer_view(request, id):
