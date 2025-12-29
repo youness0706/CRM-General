@@ -19,6 +19,15 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load .env file into environment variables (use python-dotenv)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(BASE_DIR / '.env')
+except Exception:
+    # If python-dotenv is not installed or .env is missing, continue —
+    # environment variables may be set elsewhere (e.g., system env)
+    pass
+
 
 
 

@@ -60,5 +60,8 @@ urlpatterns = [
     path('bulk-deactivate-trainers/', views.bulk_deactivate_trainers, name='bulk_deactivate_trainers'),
 
     path('setup_organization/', views.signup, name='setup_organization'),
-    
+
+    #Landing page
+    path('landing_page/', views.landing_page, name='landing_page'),
+
 ]

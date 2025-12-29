@@ -164,6 +164,10 @@ def Home(request):
         return redirect('dashboard')
 
 
+def landing_page(request):
+    return render(request, "pages/landing_page.html")
+
+
 @csrf_exempt
 @require_POST
 @require_organization
