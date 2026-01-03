@@ -1,183 +1,637 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء حساب جديد - نظام تسيير النوادي</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --primary: #667eea;
-            --secondary: #764ba2;
-            --success: #28a745;
-            --danger: #dc3545;
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
         body {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 30px 0;
+            padding: 2rem 0;
+            position: relative;
+            overflow-x: hidden;
         }
         
+        /* Animated background elements */
+        body::before {
+            content: '';
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            top: -200px;
+            right: -200px;
+            animation: float 6s ease-in-out infinite;
+            z-index: 0;
+        }
+        
+        body::after {
+            content: '';
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            bottom: -150px;
+            left: -150px;
+            animation: float 8s ease-in-out infinite;
+            z-index: 0;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        /* Header matching landing page */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+        
+        .back-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: transform 0.3s;
+        }
+        
+        .back-link:hover {
+            transform: translateX(5px);
+        }
+        
+        /* Main container */
         .signup-container {
             max-width: 900px;
-            margin: 0 auto;
+            margin: 7rem auto 2rem;
+            position: relative;
+            z-index: 1;
+            padding: 0 1rem;
         }
         
         .signup-card {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border-radius: 30px;
+            box-shadow: 0 20px 80px rgba(0,0,0,0.3);
+            overflow: hidden;
+            animation: slideUp 0.8s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Header section */
+        .signup-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+            position: relative;
             overflow: hidden;
         }
         
-        .signup-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            padding: 40px;
-            text-align: center;
+        .signup-header::before {
+            content: '';
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            top: -100px;
+            left: -50px;
         }
         
         .signup-header h1 {
-            font-size: 2rem;
-            margin-bottom: 10px;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            position: relative;
         }
         
-        .signup-body {
-            padding: 40px;
-        }
-        
-        .section-title {
-            color: var(--primary);
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--primary);
-            display: flex;
-            align-items: center;
-        }
-        
-        .section-title i {
-            margin-left: 10px;
-        }
-        
-        .form-label {
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 8px;
-        }
-        
-        .form-control, .form-select {
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 12px 15px;
-            transition: all 0.3s;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-        
-        .input-group-text {
-            background: white;
-            border: 2px solid #e9ecef;
-            border-left: none;
-            border-radius: 0 10px 10px 0;
-        }
-        
-        .input-group .form-control {
-            border-left: none;
-            border-radius: 10px 0 0 10px;
-        }
-        
-        .btn-signup {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            border: none;
-            color: white;
-            padding: 15px 40px;
+        .signup-header p {
             font-size: 1.2rem;
-            border-radius: 10px;
-            transition: transform 0.2s;
-            width: 100%;
+            opacity: 0.95;
+            position: relative;
         }
         
-        .btn-signup:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-            color: white;
+        /* Body section */
+        .signup-body {
+            padding: 3rem 2rem;
         }
         
-        .validation-feedback {
-            font-size: 0.875rem;
-            margin-top: 5px;
-        }
-        
-        .available {
-            color: var(--success);
-        }
-        
-        .unavailable {
-            color: var(--danger);
-        }
-        
+        /* Progress indicator */
         .progress-indicator {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 30px;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        
+        .progress-indicator::before {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 25%;
+            right: 25%;
+            height: 3px;
+            background: #e9ecef;
+            z-index: 0;
         }
         
         .step {
             flex: 1;
             text-align: center;
-            padding: 10px;
-            background: #f8f9fa;
-            margin: 0 5px;
-            border-radius: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .step-circle {
+            width: 50px;
+            height: 50px;
+            background: #e9ecef;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.8rem;
+            font-size: 1.5rem;
+            color: #999;
+            transition: all 0.3s;
+        }
+        
+        .step.active .step-circle {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transform: scale(1.1);
+        }
+        
+        .step.completed .step-circle {
+            background: #28a745;
+            color: white;
+        }
+        
+        .step-label {
+            font-size: 0.95rem;
+            color: #666;
+            font-weight: 600;
+        }
+        
+        .step.active .step-label {
+            color: #667eea;
+            font-weight: 700;
+        }
+        
+        /* Feature box */
+        .info-box {
+            background: linear-gradient(135deg, #f0f4ff 0%, #e7efff 100%);
+            border-right: 5px solid #667eea;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+        
+        .info-box strong {
+            display: block;
+            font-size: 1.1rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.8rem;
+        }
+        
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #555;
+            font-size: 0.95rem;
+        }
+        
+        .feature-list li i {
+            color: #28a745;
+            font-size: 1rem;
+        }
+        
+        /* Messages */
+        .messages {
+            margin-bottom: 2rem;
+        }
+        
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideIn 0.4s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .alert-error {
+            background: #ffe6e6;
+            color: #dc3545;
+            border-right: 4px solid #dc3545;
+        }
+        
+        .alert-success {
+            background: #e6f7e6;
+            color: #28a745;
+            border-right: 4px solid #28a745;
+        }
+        
+        .alert-info {
+            background: #e6f3ff;
+            color: #667eea;
+            border-right: 4px solid #667eea;
+        }
+        
+        /* Section titles */
+        .section-title {
+            color: #667eea;
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin: 2.5rem 0 1.5rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 3px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        
+        .section-title i {
+            font-size: 1.8rem;
+        }
+        
+        /* Form styling */
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        .form-label .required {
+            color: #dc3545;
+            margin-right: 0.2rem;
+        }
+        
+        .input-wrapper {
             position: relative;
         }
         
-        .step.active {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .step.completed {
-            background: var(--success);
-            color: white;
-        }
-        
-        .password-strength {
-            height: 5px;
-            margin-top: 5px;
-            border-radius: 3px;
+        .form-control {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: 'Cairo', sans-serif;
             transition: all 0.3s;
+            background: white;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 1.1rem;
+            transition: color 0.3s;
+        }
+        
+        .form-control:focus + .input-icon {
+            color: #667eea;
+        }
+        
+        .has-icon .form-control {
+            padding-left: 3rem;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.5rem;
+            transition: color 0.3s;
+        }
+        
+        .password-toggle:hover {
+            color: #667eea;
+        }
+        
+        .has-toggle .form-control {
+            padding-left: 3rem;
+        }
+        
+        /* Validation feedback */
+        .validation-feedback {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        
+        .validation-feedback.available {
+            color: #28a745;
+        }
+        
+        .validation-feedback.unavailable {
+            color: #dc3545;
+        }
+        
+        .form-hint {
+            display: block;
+            font-size: 0.85rem;
+            color: #999;
+            margin-top: 0.4rem;
+        }
+        
+        /* Password strength */
+        .password-strength {
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 2px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+        
+        .strength-bar {
+            height: 100%;
+            transition: all 0.3s;
+            border-radius: 2px;
         }
         
         .strength-weak { background: #dc3545; width: 33%; }
         .strength-medium { background: #ffc107; width: 66%; }
         .strength-strong { background: #28a745; width: 100%; }
         
-        .info-box {
-            background: #e7f3ff;
-            border-left: 4px solid var(--primary);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+        /* Textarea */
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
         }
         
-        .feature-list {
-            list-style: none;
-            padding: 0;
+        /* Checkbox */
+        .form-check {
+            display: flex;
+            align-items: start;
+            gap: 0.8rem;
+            margin: 2rem 0;
         }
         
-        .feature-list li {
-            padding: 8px 0;
+        .form-check-input {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-top: 0.2rem;
+        }
+        
+        .form-check-label {
+            color: #555;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        
+        .form-check-label a {
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        
+        .form-check-label a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Submit button */
+        .btn-submit {
+            width: 100%;
+            padding: 1.3rem 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            font-family: 'Cairo', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
             display: flex;
             align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
         }
         
-        .feature-list li i {
-            color: var(--success);
-            margin-left: 10px;
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
+        }
+        
+        .btn-submit:active {
+            transform: translateY(-1px);
+        }
+        
+        /* Login link */
+        .login-link {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 2px solid #f0f0f0;
+        }
+        
+        .login-link p {
+            color: #666;
+            font-size: 1rem;
+        }
+        
+        .login-link a {
+            color: #667eea;
+            font-weight: 700;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .login-link a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem 0;
+            }
+            
+            .signup-container {
+                margin: 5rem auto 1rem;
+            }
+            
+            .signup-header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .signup-header p {
+                font-size: 1rem;
+            }
+            
+            .signup-body {
+                padding: 2rem 1.5rem;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .progress-indicator {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .progress-indicator::before {
+                display: none;
+            }
+            
+            .feature-list {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Loading state */
+        .btn-submit.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        .btn-submit.loading::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav>
+            <a href="{% url 'landing_page' %}" class="logo">
+                <i class="fas fa-dumbbell"></i>
+                نظام تسيير النوادي
+            </a>
+            <a href="{% url 'landing_page' %}" class="back-link">
+                <i class="fas fa-arrow-left"></i>
+                رجوع للصفحة الرئيسية
+            </a>
+        </nav>
+    </header>
 
-    <div class="container signup-container">
+    <!-- Main Container -->
+    <div class="signup-container">
         <div class="signup-card">
             <!-- Header -->
             <div class="signup-header">
@@ -189,227 +643,245 @@
             <div class="signup-body">
                 <!-- Messages -->
                 {% if messages %}
+                <div class="messages">
                     {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <div class="alert alert-{{ message.tags }}">
+                        <i class="fas fa-{% if message.tags == 'error' %}exclamation-circle{% elif message.tags == 'success' %}check-circle{% else %}info-circle{% endif %}"></i>
+                        <span>{{ message }}</span>
                     </div>
                     {% endfor %}
+                </div>
                 {% endif %}
 
                 <!-- Progress Indicator -->
                 <div class="progress-indicator">
                     <div class="step active">
-                        <i class="bi bi-person-circle"></i>
-                        <div>معلومات الحساب</div>
+                        <div class="step-circle">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="step-label">معلومات الحساب</div>
                     </div>
                     <div class="step">
-                        <i class="bi bi-building"></i>
-                        <div>معلومات الجمعية</div>
+                        <div class="step-circle">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="step-label">معلومات الجمعية</div>
                     </div>
                     <div class="step">
-                        <i class="bi bi-check-circle"></i>
-                        <div>إنهاء</div>
+                        <div class="step-circle">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="step-label">إنهاء</div>
                     </div>
                 </div>
 
                 <!-- Features Box -->
                 <div class="info-box">
-                    <strong>ماذا ستحصل عليه:</strong>
+                    <strong>🎯 ماذا ستحصل عليه:</strong>
                     <ul class="feature-list">
-                        <li><i class="bi bi-check-circle-fill"></i> نظام إدارة متكامل للمتدربين</li>
-                        <li><i class="bi bi-check-circle-fill"></i> تتبع الدفعات والمالية</li>
-                        <li><i class="bi bi-check-circle-fill"></i> تقارير تفصيلية</li>
-                        <li><i class="bi bi-check-circle-fill"></i> رابط تسجيل خاص بجمعيتك</li>
+                        <li><i class="fas fa-check-circle"></i> نظام إدارة متكامل للمتدربين</li>
+                        <li><i class="fas fa-check-circle"></i> تتبع الدفعات والمالية</li>
+                        <li><i class="fas fa-check-circle"></i> تقارير تفصيلية</li>
+                        <li><i class="fas fa-check-circle"></i> رابط تسجيل خاص بجمعيتك</li>
                     </ul>
                 </div>
 
                 <!-- Signup Form -->
-                <form method="POST" id="signupForm" class="needs-validation" novalidate>
+                <form method="POST" id="signupForm" novalidate>
                     {% csrf_token %}
 
                     <!-- Section 1: User Account -->
                     <div class="section-title">
-                        <i class="bi bi-person-circle"></i>
+                        <i class="fas fa-user-circle"></i>
                         معلومات الحساب
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="first_name" class="form-label">الاسم الأول *</label>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="first_name" class="form-label">
+                                <span class="required">*</span> الاسم الأول
+                            </label>
                             <input type="text" class="form-control" id="first_name" name="first_name" 
                                    value="{{ first_name }}" required>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="last_name" class="form-label">اسم العائلة *</label>
+                        <div class="form-group">
+                            <label for="last_name" class="form-label">
+                                <span class="required">*</span> اسم العائلة
+                            </label>
                             <input type="text" class="form-control" id="last_name" name="last_name" 
                                    value="{{ last_name }}" required>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="username" class="form-label">اسم المستخدم *</label>
-                        <div class="input-group">
+                    <div class="form-group">
+                        <label for="username" class="form-label">
+                            <span class="required">*</span> اسم المستخدم
+                        </label>
+                        <div class="input-wrapper has-icon">
                             <input type="text" class="form-control" id="username" name="username" 
                                    value="{{ username }}" required pattern="[a-zA-Z0-9_]{3,}">
-                            <span class="input-group-text">
-                                <i class="bi bi-person" id="username-icon"></i>
-                            </span>
+                            <i class="fas fa-user input-icon" id="username-icon"></i>
                         </div>
                         <div id="username-feedback" class="validation-feedback"></div>
-                        <small class="text-muted">3 أحرف على الأقل، حروف إنجليزية وأرقام فقط</small>
+                        <small class="form-hint">3 أحرف على الأقل، حروف إنجليزية وأرقام فقط</small>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="email" class="form-label">البريد الإلكتروني *</label>
-                        <div class="input-group">
+                    <div class="form-group">
+                        <label for="email" class="form-label">
+                            <span class="required">*</span> البريد الإلكتروني
+                        </label>
+                        <div class="input-wrapper has-icon">
                             <input type="email" class="form-control" id="email" name="email" 
                                    value="{{ email }}" required>
-                            <span class="input-group-text">
-                                <i class="bi bi-envelope"></i>
-                            </span>
+                            <i class="fas fa-envelope input-icon"></i>
                         </div>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="form-group">
                         <label for="phone" class="form-label">رقم الهاتف</label>
-                        <div class="input-group">
+                        <div class="input-wrapper has-icon">
                             <input type="tel" class="form-control" id="phone" name="phone" 
                                    value="{{ phone }}" placeholder="+212 6XX XXX XXX">
-                            <span class="input-group-text">
-                                <i class="bi bi-telephone"></i>
-                            </span>
+                            <i class="fas fa-phone input-icon"></i>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="password" class="form-label">كلمة المرور *</label>
-                            <div class="input-group">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="password" class="form-label">
+                                <span class="required">*</span> كلمة المرور
+                            </label>
+                            <div class="input-wrapper has-toggle">
                                 <input type="password" class="form-control" id="password" name="password" 
                                        required minlength="6">
-                                <span class="input-group-text" onclick="togglePassword('password')" 
-                                      style="cursor: pointer;">
-                                    <i class="bi bi-eye" id="password-toggle"></i>
-                                </span>
+                                <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                                    <i class="fas fa-eye" id="password-toggle-icon"></i>
+                                </button>
                             </div>
-                            <div class="password-strength" id="password-strength"></div>
-                            <small class="text-muted">6 أحرف على الأقل</small>
+                            <div class="password-strength">
+                                <div class="strength-bar" id="password-strength-bar"></div>
+                            </div>
+                            <small class="form-hint">6 أحرف على الأقل</small>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="password_confirm" class="form-label">تأكيد كلمة المرور *</label>
-                            <div class="input-group">
+                        <div class="form-group">
+                            <label for="password_confirm" class="form-label">
+                                <span class="required">*</span> تأكيد كلمة المرور
+                            </label>
+                            <div class="input-wrapper has-toggle">
                                 <input type="password" class="form-control" id="password_confirm" 
                                        name="password_confirm" required>
-                                <span class="input-group-text" onclick="togglePassword('password_confirm')" 
-                                      style="cursor: pointer;">
-                                    <i class="bi bi-eye" id="password_confirm-toggle"></i>
-                                </span>
+                                <button type="button" class="password-toggle" onclick="togglePassword('password_confirm')">
+                                    <i class="fas fa-eye" id="password_confirm-toggle-icon"></i>
+                                </button>
                             </div>
                             <div id="password-match" class="validation-feedback"></div>
                         </div>
                     </div>
 
-                    <hr class="my-4">
-
                     <!-- Section 2: Organization -->
                     <div class="section-title">
-                        <i class="bi bi-building"></i>
+                        <i class="fas fa-building"></i>
                         معلومات الجمعية
                     </div>
 
-                    <div class="mb-3">
-                        <label for="org_name" class="form-label">اسم الجمعية *</label>
+                    <div class="form-group">
+                        <label for="org_name" class="form-label">
+                            <span class="required">*</span> اسم الجمعية
+                        </label>
                         <input type="text" class="form-control" id="org_name" name="org_name" 
                                value="{{ org_name }}" required>
-                        <small class="text-muted">مثال: نجوم أركانة للتايكوندو</small>
+                        <small class="form-hint">مثال: نجوم أركانة للتايكوندو</small>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="org_slug" class="form-label">المعرف (Slug) *</label>
-                        <div class="input-group">
+                    <div class="form-group">
+                        <label for="org_slug" class="form-label">
+                            <span class="required">*</span> المعرف (Slug)
+                        </label>
+                        <div class="input-wrapper has-icon">
                             <input type="text" class="form-control" id="org_slug" name="org_slug" 
                                    value="{{ org_slug }}" required pattern="[a-z0-9-]+">
-                            <span class="input-group-text">
-                                <i class="bi bi-link-45deg" id="slug-icon"></i>
-                            </span>
+                            <i class="fas fa-link input-icon" id="slug-icon"></i>
                         </div>
                         <div id="slug-feedback" class="validation-feedback"></div>
-                        <small class="text-muted">حروف إنجليزية صغيرة وأرقام وشرطات فقط (مثال: nojoum-arkana)</small>
+                        <small class="form-hint">حروف إنجليزية صغيرة وأرقام وشرطات فقط (مثال: nojoum-arkana)</small>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
+                    <div class="form-row">
+                        <div class="form-group">
                             <label for="org_email" class="form-label">البريد الإلكتروني للجمعية</label>
-                            <input type="email" class="form-control" id="org_email" name="org_email" 
-                                   value="{{ org_email }}">
-                            <small class="text-muted">اترك فارغاً لاستخدام بريدك الشخصي</small>
+                            <div class="input-wrapper has-icon">
+                                <input type="email" class="form-control" id="org_email" name="org_email" 
+                                       value="{{ org_email }}">
+                                <i class="fas fa-envelope input-icon"></i>
+                            </div>
+                            <small class="form-hint">اترك فارغاً لاستخدام بريدك الشخصي</small>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="form-group">
                             <label for="org_phone" class="form-label">هاتف الجمعية</label>
-                            <input type="tel" class="form-control" id="org_phone" name="org_phone" 
-                                   value="{{ org_phone }}">
+                            <div class="input-wrapper has-icon">
+                                <input type="tel" class="form-control" id="org_phone" name="org_phone" 
+                                       value="{{ org_phone }}">
+                                <i class="fas fa-phone input-icon"></i>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="form-group">
                         <label for="org_description" class="form-label">وصف الجمعية</label>
-                        <textarea class="form-control" id="org_description" name="org_description" 
-                                  rows="3">{{ org_description }}</textarea>
-                        <small class="text-muted">وصف مختصر عن جمعيتك (اختياري)</small>
+                        <textarea class="form-control" id="org_description" name="org_description">{{ org_description }}</textarea>
+                        <small class="form-hint">وصف مختصر عن جمعيتك (اختياري)</small>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="form-group">
                         <label for="org_address" class="form-label">العنوان</label>
-                        <input type="text" class="form-control" id="org_address" name="org_address" 
-                               value="{{ org_address }}">
+                        <div class="input-wrapper has-icon">
+                            <input type="text" class="form-control" id="org_address" name="org_address" 
+                                   value="{{ org_address }}">
+                            <i class="fas fa-map-marker-alt input-icon"></i>
+                        </div>
                     </div>
-
-                    <hr class="my-4">
 
                     <!-- Terms -->
-                    <div class="form-check mb-4">
+                    <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="terms" required>
                         <label class="form-check-label" for="terms">
                             أوافق على <a href="#" target="_blank">الشروط والأحكام</a> و
-                            <a href="#" target="_blank">سياسة الخصوصية</a> *
+                            <a href="#" target="_blank">سياسة الخصوصية</a>
                         </label>
                     </div>
 
                     <!-- Submit Button -->
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-signup">
-                            <i class="bi bi-check-circle"></i>
-                            إنشاء الحساب والبدء
-                        </button>
-                    </div>
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <i class="fas fa-check-circle"></i>
+                        <span>إنشاء الحساب والبدء</span>
+                    </button>
                 </form>
 
                 <!-- Login Link -->
-                <div class="text-center mt-4">
-                    <p class="text-muted">
+                <div class="login-link">
+                    <p>
                         لديك حساب بالفعل؟ 
-                        <a href="{% url 'login' %}" style="color: var(--primary); font-weight: bold;">
-                            تسجيل الدخول
-                        </a>
+                        <a href="{% url 'login' %}">تسجيل الدخول</a>
                     </p>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Auto-generate slug from organization name
         document.getElementById('org_name').addEventListener('input', function(e) {
             const slug = e.target.value
                 .toLowerCase()
+                .replace(/[أ-ي]/g, '') // Remove Arabic characters
                 .replace(/[^a-z0-9\s-]/g, '')
                 .replace(/\s+/g, '-')
                 .replace(/-+/g, '-')
                 .trim();
             document.getElementById('org_slug').value = slug;
-            checkSlugAvailability(slug);
+            if (slug.length >= 3) {
+                checkSlugAvailability(slug);
+            }
         });
 
         // Check username availability
@@ -418,9 +890,13 @@
             clearTimeout(usernameTimeout);
             const username = e.target.value;
             
-            if (username.length < 3) return;
+            if (username.length < 3) {
+                document.getElementById('username-feedback').innerHTML = '';
+                return;
+            }
             
             usernameTimeout = setTimeout(() => {
+                // Note: You'll need to create this API endpoint
                 fetch(`/api/check-username/?username=${username}`)
                     .then(res => res.json())
                     .then(data => {
@@ -429,13 +905,19 @@
                         
                         if (data.available) {
                             feedback.className = 'validation-feedback available';
-                            feedback.innerHTML = '<i class="bi bi-check-circle-fill"></i> ' + data.message;
-                            icon.className = 'bi bi-check-circle-fill text-success';
+                            feedback.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
+                            icon.className = 'fas fa-check-circle input-icon';
+                            icon.style.color = '#28a745';
                         } else {
                             feedback.className = 'validation-feedback unavailable';
-                            feedback.innerHTML = '<i class="bi bi-x-circle-fill"></i> ' + data.message;
-                            icon.className = 'bi bi-x-circle-fill text-danger';
+                            feedback.innerHTML = '<i class="fas fa-times-circle"></i> ' + data.message;
+                            icon.className = 'fas fa-times-circle input-icon';
+                            icon.style.color = '#dc3545';
                         }
+                    })
+                    .catch(() => {
+                        // If API doesn't exist, just skip validation
+                        document.getElementById('username-feedback').innerHTML = '';
                     });
             }, 500);
         });
@@ -446,7 +928,10 @@
             clearTimeout(slugTimeout);
             const slug = e.target.value;
             
-            if (slug.length < 3) return;
+            if (slug.length < 3) {
+                document.getElementById('slug-feedback').innerHTML = '';
+                return;
+            }
             
             slugTimeout = setTimeout(() => {
                 checkSlugAvailability(slug);
@@ -454,6 +939,7 @@
         });
 
         function checkSlugAvailability(slug) {
+            // Note: You'll need to create this API endpoint
             fetch(`/api/check-slug/?slug=${slug}`)
                 .then(res => res.json())
                 .then(data => {
@@ -462,20 +948,26 @@
                     
                     if (data.available) {
                         feedback.className = 'validation-feedback available';
-                        feedback.innerHTML = '<i class="bi bi-check-circle-fill"></i> ' + data.message;
-                        icon.className = 'bi bi-check-circle-fill text-success';
+                        feedback.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
+                        icon.className = 'fas fa-check-circle input-icon';
+                        icon.style.color = '#28a745';
                     } else {
                         feedback.className = 'validation-feedback unavailable';
-                        feedback.innerHTML = '<i class="bi bi-x-circle-fill"></i> ' + data.message;
-                        icon.className = 'bi bi-x-circle-fill text-danger';
+                        feedback.innerHTML = '<i class="fas fa-times-circle"></i> ' + data.message;
+                        icon.className = 'fas fa-times-circle input-icon';
+                        icon.style.color = '#dc3545';
                     }
+                })
+                .catch(() => {
+                    // If API doesn't exist, just skip validation
+                    document.getElementById('slug-feedback').innerHTML = '';
                 });
         }
 
         // Password strength indicator
         document.getElementById('password').addEventListener('input', function(e) {
             const password = e.target.value;
-            const strength = document.getElementById('password-strength');
+            const strengthBar = document.getElementById('password-strength-bar');
             
             let score = 0;
             if (password.length >= 6) score++;
@@ -484,19 +976,23 @@
             if (/\d/.test(password)) score++;
             if (/[^a-zA-Z\d]/.test(password)) score++;
             
+            strengthBar.className = 'strength-bar';
             if (score <= 2) {
-                strength.className = 'password-strength strength-weak';
+                strengthBar.classList.add('strength-weak');
             } else if (score <= 3) {
-                strength.className = 'password-strength strength-medium';
+                strengthBar.classList.add('strength-medium');
             } else {
-                strength.className = 'password-strength strength-strong';
+                strengthBar.classList.add('strength-strong');
             }
         });
 
         // Password match validation
-        document.getElementById('password_confirm').addEventListener('input', function(e) {
+        document.getElementById('password_confirm').addEventListener('input', validatePasswordMatch);
+        document.getElementById('password').addEventListener('input', validatePasswordMatch);
+
+        function validatePasswordMatch() {
             const password = document.getElementById('password').value;
-            const confirm = e.target.value;
+            const confirm = document.getElementById('password_confirm').value;
             const feedback = document.getElementById('password-match');
             
             if (confirm === '') {
@@ -506,39 +1002,62 @@
             
             if (password === confirm) {
                 feedback.className = 'validation-feedback available';
-                feedback.innerHTML = '<i class="bi bi-check-circle-fill"></i> كلمات المرور متطابقة';
+                feedback.innerHTML = '<i class="fas fa-check-circle"></i> كلمات المرور متطابقة';
             } else {
                 feedback.className = 'validation-feedback unavailable';
-                feedback.innerHTML = '<i class="bi bi-x-circle-fill"></i> كلمات المرور غير متطابقة';
+                feedback.innerHTML = '<i class="fas fa-times-circle"></i> كلمات المرور غير متطابقة';
             }
-        });
+        }
 
         // Toggle password visibility
         function togglePassword(fieldId) {
             const field = document.getElementById(fieldId);
-            const icon = document.getElementById(fieldId + '-toggle');
+            const icon = document.getElementById(fieldId + '-toggle-icon');
             
             if (field.type === 'password') {
                 field.type = 'text';
-                icon.className = 'bi bi-eye-slash';
+                icon.className = 'fas fa-eye-slash';
             } else {
                 field.type = 'password';
-                icon.className = 'bi bi-eye';
+                icon.className = 'fas fa-eye';
             }
         }
 
-        // Form validation
-        (function() {
-            'use strict';
-            var forms = document.querySelectorAll('.needs-validation');
-            Array.prototype.slice.call(forms).forEach(function(form) {
-                form.addEventListener('submit', function(event) {
-                    if (!form.checkValidity()) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                }, false);
+        // Form submission with loading state
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            const terms = document.getElementById('terms');
+            
+            if (!terms.checked) {
+                e.preventDefault();
+                alert('يجب الموافقة على الشروط والأحكام');
+                return;
+            }
+            
+            // Add loading state
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+        });
+
+        // Progress animation on scroll
+        const sections = document.querySelectorAll('.section-title');
+        const steps = document.querySelectorAll('.step');
+
+        window.addEventListener('scroll', () => {
+            sections.forEach((section, index) => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top < window.innerHeight / 2 && rect.top > -100) {
+                    steps.forEach((step, i) => {
+                        if (i < index + 1) {
+                            step.classList.add('completed');
+                        }
+                        if (i === index + 1) {
+                            step.classList.add('active');
+                        }
+                    });
+                }
             });
-        })();
+        });
     </script>
+</body>
+</html>

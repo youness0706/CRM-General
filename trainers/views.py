@@ -2155,14 +2155,87 @@ def setup_organization(request):
 
 # trainers/views.py - Add these views
 
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.contrib.auth import login, authenticate
-from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils.text import slugify
 from .models import OrganizationInfo, Staff
 import re
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+
+@require_http_methods(["GET"])
+def check_username(request):
+    """
+    API endpoint to check if username is available
+    Usage: /api/check-username/?username=johndoe
+    """
+    username = request.GET.get('username', '').strip()
+    
+    if not username:
+        return JsonResponse({
+            'available': False,
+            'message': 'اسم المستخدم مطلوب'
+        })
+    
+    if len(username) < 3:
+        return JsonResponse({
+            'available': False,
+            'message': 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل'
+        })
+    
+    # Check if username exists
+    if User.objects.filter(username=username).exists():
+        return JsonResponse({
+            'available': False,
+            'message': 'اسم المستخدم موجود بالفعل'
+        })
+    
+    return JsonResponse({
+        'available': True,
+        'message': 'اسم المستخدم متاح ✓'
+    })
+
+
+@require_http_methods(["GET"])
+def check_slug(request):
+    """
+    API endpoint to check if organization slug is available
+    Usage: /api/check-slug/?slug=my-org
+    """
+    from .models import OrganizationInfo  # Import your model
+    
+    slug = request.GET.get('slug', '').strip()
+    
+    if not slug:
+        return JsonResponse({
+            'available': False,
+            'message': 'المعرف مطلوب'
+        })
+    
+    if len(slug) < 3:
+        return JsonResponse({
+            'available': False,
+            'message': 'المعرف يجب أن يكون 3 أحرف على الأقل'
+        })
+    
+    # Check format
+    import re
+    if not re.match(r'^[a-z0-9-]+$', slug):
+        return JsonResponse({
+            'available': False,
+            'message': 'المعرف يجب أن يحتوي على حروف إنجليزية صغيرة وأرقام وشرطات فقط'
+        })
+    
+    # Check if slug exists
+    if OrganizationInfo.objects.filter(slug=slug).exists():
+        return JsonResponse({
+            'available': False,
+            'message': 'المعرف مستخدم بالفعل'
+        })
+    
+    return JsonResponse({
+        'available': True,
+        'message': 'المعرف متاح ✓'
+    })
 
 
 def signup(request):
