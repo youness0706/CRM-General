@@ -109,7 +109,83 @@ a {
 
 <body class="content">
     {% if user.is_authenticated %}
+    
     {% include './sidebar.html' %}
+
+    {% include './subscription_widget.html' %}
+
+    {% if request.organization and request.staff.is_admin %}
+    {% with status=request.organization.subscription_status %}
+        {% if status.days is not None %}
+            <div class="subscription-widget alert alert-{{ status.class }} alert-dismissible fade show" role="alert">
+                <div class="d-flex align-items-center">
+                    <div class="subscription-icon me-3">
+                        {% if status.days > 7 %}
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        {% elif status.days > 0 %}
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        {% else %}
+                            <i class="fas fa-times-circle fa-2x"></i>
+                        {% endif %}
+                    </div>
+                    <div class="subscription-info flex-grow-1">
+                        <h6 class="mb-1">حالة الاشتراك</h6>
+                        <p class="mb-0">
+                            <strong>{{ status.text }}</strong>
+                            {% if request.organization.subscription_end_date %}
+                                <br>
+                                <small>ينتهي في: {{ request.organization.subscription_end_date }}</small>
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% if status.days <= 7 %}
+                        <div class="subscription-action">
+                            <a href="{% url 'edit_organization' %}" class="btn btn-sm btn-light">
+                                تجديد الآن
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            
+            <style>
+                .subscription-widget {
+                    position: sticky;
+                    top: 0;
+                    z-index: 1000;
+                    border-radius: 0;
+                    margin-bottom: 0;
+                }
+                .subscription-icon {
+                    opacity: 0.8;
+                }
+                .subscription-widget.alert-success {
+                    background-color: #d4edda;
+                    border-color: #c3e6cb;
+                    color: #155724;
+                }
+                .subscription-widget.alert-warning {
+                    background-color: #fff3cd;
+                    border-color: #ffeeba;
+                    color: #856404;
+                }
+                .subscription-widget.alert-danger {
+                    background-color: #f8d7da;
+                    border-color: #f5c6cb;
+                    color: #721c24;
+                    animation: pulse-danger 2s infinite;
+                }
+                @keyframes pulse-danger {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.85; }
+                }
+            </style>
+        {% endif %}
+    {% endwith %}
+{% endif %}
+
+
     {% endif %}
     {% block content %}
     

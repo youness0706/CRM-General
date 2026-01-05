@@ -161,7 +161,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 CKEDITOR_BASEPATH = "/static/ckeditor/"
 
 #Digital Ocean Spaces
-
+"""
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3.S3Storage",
@@ -191,7 +191,7 @@ STORAGES = {
     },
 }
 
-
+"""
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 

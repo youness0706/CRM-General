@@ -1088,6 +1088,182 @@ def add_article(request):
     return render(request, 'pages/add_Article.htm', {'trainers': trainers, 'date': timezone.now().date()})
 
 
+# BONUS VIEWS - Additional subscription-related views you might want
+
+
+
+
+@login_required(login_url='/login/')
+@require_organization
+def subscription_status_view(request):
+    """
+    View for users to check their subscription status
+    Shows detailed information about current subscription
+    """
+    organization = request.organization
+    
+    # Get subscription details
+    days_left = organization.days_until_expiration()
+    subscription_status = organization.subscription_status()
+    
+    # Get payment history
+    recent_payments = []
+    if hasattr(organization, 'subscription_payments'):
+        recent_payments = organization.subscription_payments.all()[:10]
+    
+    # Calculate total paid
+    total_paid = sum(payment.amount for payment in recent_payments)
+    
+    # Get next payment due date (if applicable)
+    next_payment_date = None
+    if organization.subscription_end_date:
+        from datetime import timedelta
+        # Suggest renewal 7 days before expiration
+        next_payment_date = organization.subscription_end_date - timedelta(days=7)
+    
+    context = {
+        'organization': organization,
+        'days_left': days_left,
+        'subscription_status': subscription_status,
+        'recent_payments': recent_payments,
+        'total_paid': total_paid,
+        'next_payment_date': next_payment_date,
+        'is_admin': request.staff.is_admin if request.staff else False,
+    }
+    
+    return render(request, 'admin/subscription_status.html', context)
+
+
+@login_required(login_url='/login/')
+@require_organization
+def subscription_renew_view(request):
+    """
+    View for admins to request subscription renewal
+    This could send an email to support or show payment instructions
+    """
+    organization = request.organization
+    
+    if request.method == 'POST':
+        # Handle renewal request
+        requested_months = int(request.POST.get('months', 1))
+        contact_email = request.POST.get('contact_email', organization.email)
+        notes = request.POST.get('notes', '')
+        
+        # Here you could:
+        # 1. Send email to support
+        # 2. Create a pending payment request
+        # 3. Generate invoice
+        # 4. Redirect to payment page
+        
+        from django.core.mail import send_mail
+        from django.conf import settings
+        
+        try:
+            send_mail(
+                subject=f'طلب تجديد اشتراك - {organization.name}',
+                message=f"""
+طلب تجديد اشتراك جديد
+
+الجمعية: {organization.name}
+المدة المطلوبة: {requested_months} شهر
+البريد الإلكتروني: {contact_email}
+ملاحظات: {notes}
+
+الحالة الحالية:
+- تاريخ الانتهاء: {organization.subscription_end_date}
+- الأيام المتبقية: {organization.days_until_expiration()}
+
+يرجى التواصل مع الجمعية لإتمام عملية التجديد.
+                """,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[settings.ADMIN_EMAIL],  # Configure this
+                fail_silently=False,
+            )
+            
+            messages.success(
+                request,
+                'تم إرسال طلب التجديد بنجاح. سيتم التواصل معك قريباً.'
+            )
+            return redirect('subscription_status')
+            
+        except Exception as e:
+            messages.error(
+                request,
+                f'حدث خطأ أثناء إرسال الطلب: {str(e)}'
+            )
+    
+    # Calculate suggested pricing (you can customize this)
+    pricing = {
+        1: 500,   # 1 month
+        3: 1400,  # 3 months
+        6: 2700,  # 6 months
+        12: 5000, # 12 months
+    }
+    
+    context = {
+        'organization': organization,
+        'subscription_status': organization.subscription_status(),
+        'pricing': pricing,
+    }
+    
+    return render(request, 'pages/subscription_renew.html', context)
+
+
+@login_required(login_url='/login/')
+@require_organization
+def subscription_history_view(request):
+    """
+    View to show complete payment history
+    """
+    organization = request.organization
+    
+    # Get all payments
+    all_payments = []
+    if hasattr(organization, 'subscription_payments'):
+        all_payments = organization.subscription_payments.all()
+    
+    # Calculate statistics
+    total_paid = sum(payment.amount for payment in all_payments)
+    total_months = sum(payment.duration_months for payment in all_payments)
+    
+    context = {
+        'organization': organization,
+        'payments': all_payments,
+        'total_paid': total_paid,
+        'total_months': total_months,
+        'average_payment': total_paid / len(all_payments) if all_payments else 0,
+    }
+    
+    return render(request, 'pages/subscription_history.html', context)
+
+
+# API View for checking subscription status (for AJAX calls)
+from django.http import JsonResponse
+
+@login_required(login_url='/login/')
+@require_organization
+def subscription_status_api(request):
+    """
+    JSON API endpoint to check subscription status
+    Usage: /api/subscription/status/
+    """
+    organization = request.organization
+    
+    days_left = organization.days_until_expiration()
+    status = organization.subscription_status()
+    
+    return JsonResponse({
+        'organization': organization.name,
+        'is_active': organization.is_active,
+        'days_left': days_left,
+        'status': status['text'],
+        'status_class': status['class'],
+        'subscription_start': str(organization.subscription_start_date) if organization.subscription_start_date else None,
+        'subscription_end': str(organization.subscription_end_date) if organization.subscription_end_date else None,
+        'is_expired': organization.is_expired(),
+        'is_in_grace_period': organization.is_in_grace_period(),
+        'grace_period_days': organization.grace_period_days,
+    })
 
 @login_required(login_url='/login/')
 @require_organization

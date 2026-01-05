@@ -62,6 +62,7 @@ urlpatterns = [
     path('setup_organization/', views.signup, name='setup_organization'),
     path('api/check-username/', views.check_username, name='check_username'),
     path('api/check-slug/', views.check_slug, name='check_slug'),
+    path('subscription/expired/', views.subscription_status_view, name='subscription_expired'),
 
     #Landing page
     path('landing_page/', views.landing_page, name='landing_page'),

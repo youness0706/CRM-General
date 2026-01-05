@@ -5,6 +5,9 @@ from ckeditor.fields import RichTextField
 from django.utils.timezone import now
 from django.utils.text import slugify
 import os
+from datetime import timedelta
+from dateutil.relativedelta import relativedelta
+
 
 
 class OrganizationInfo(models.Model):
@@ -16,10 +19,8 @@ class OrganizationInfo(models.Model):
     rent_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='مبلغ الإيجار')
     phone_number = models.CharField(max_length=15, blank=True, verbose_name='رقم الهاتف')
     email = models.EmailField(blank=True, verbose_name='البريد الإلكتروني')
-    datepay = models.DateField(blank=True, null=True, verbose_name='تاريخ الدفع')
     
     # Subscription fields
-    is_active = models.BooleanField(default=True, verbose_name='نشطة')
     subscription_tier = models.CharField(
         max_length=20,
         choices=[('free', 'مجاني'), ('basic', 'أساسي'), ('premium', 'متميز')],
@@ -28,7 +29,54 @@ class OrganizationInfo(models.Model):
     )
     max_trainers = models.IntegerField(default=50, verbose_name='الحد الأقصى للمتدربين')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ الإنشاء')
-
+    is_active = models.BooleanField(default=True, verbose_name='ناشط')
+    # Subscription status and dates
+    SUBSCRIPTION_STATUS_CHOICES = [
+        ('trial', 'تجريبي'),
+        ('active', 'نشط'),
+        ('expired', 'منتهي'),
+        ('suspended', 'معلق'),
+    ]
+    
+    SUBSCRIPTION_PERIOD_CHOICES = [
+        ('1m', 'شهر واحد'),
+        ('3m', 'ثلاثة أشهر'),
+    ]
+    
+    subscription_status = models.CharField(
+        max_length=20,
+        choices=SUBSCRIPTION_STATUS_CHOICES,
+        default='trial',
+        verbose_name='حالة الاشتراك'
+    )
+    trial_start = models.DateField(blank=True, null=True, verbose_name='بداية التجربة')
+    trial_end = models.DateField(blank=True, null=True, verbose_name='نهاية التجربة')
+    subscription_start = models.DateField(blank=True, null=True, verbose_name='بداية الاشتراك')
+    subscription_end = models.DateField(blank=True, null=True, verbose_name='نهاية الاشتراك')
+    subscription_start_date = models.DateField(
+        null=True, 
+        blank=True,
+        verbose_name="تاريخ بداية الاشتراك"
+    )
+    subscription_end_date = models.DateField(
+        null=True, 
+        blank=True,
+        verbose_name="تاريخ نهاية الاشتراك"
+    )
+    grace_period_days = models.IntegerField(
+        default=7,
+        verbose_name="فترة السماح "
+    )
+    subscription_period = models.CharField(
+        max_length=2,
+        choices=SUBSCRIPTION_PERIOD_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name='مدةالاشتراك'
+    )
+    last_payment_date = models.DateField(blank=True, null=True, verbose_name='تاريخ آخر دفعة')
+    location = models.CharField(max_length=255, blank=True, verbose_name='الموقع')
+    datepay = models.DateField(default=timezone.now, verbose_name='تاريخ دفع الايجار')
     class Meta:
         verbose_name = 'جمعية'
         verbose_name_plural = 'الجمعيات'
@@ -40,7 +88,286 @@ class OrganizationInfo(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
+        if not self.pk and not self.trial_start:
+            self.start_trial()
         super().save(*args, **kwargs)
+    
+    # Properties
+    @property
+    def is_on_trial(self):
+        """Check if organization is currently on trial"""
+        if self.subscription_status != 'trial':
+            return False
+        if not self.trial_end:
+            return False
+        return now().date() <= self.trial_end
+    
+    @property
+    def is_subscription_active(self):
+        """Check if organization has an active paid subscription"""
+        if self.subscription_status != 'active':
+            return False
+        if not self.subscription_end:
+            return False
+        return now().date() <= self.subscription_end
+    
+    @property
+    def is_subscription_expired(self):
+        """Check if subscription has expired"""
+        if self.subscription_status == 'trial':
+            if self.trial_end:
+                return now().date() > self.trial_end
+            return False
+        elif self.subscription_status == 'active':
+            if self.subscription_end:
+                return now().date() > self.subscription_end
+            return False
+        return self.subscription_status == 'expired'
+    
+    @property
+    def days_remaining(self):
+        """Calculate days remaining in current subscription period"""
+        today = now().date()
+        
+        if self.subscription_status == 'trial' and self.trial_end:
+            delta = (self.trial_end - today).days
+            return max(0, delta)
+        elif self.subscription_status == 'active' and self.subscription_end:
+            delta = (self.subscription_end - today).days
+            return max(0, delta)
+        
+        return 0
+    
+    # Methods
+    def start_trial(self, trial_days=14):
+        """Start a free trial period"""
+        self.subscription_status = 'trial'
+        self.trial_start = now().date()
+        self.trial_end = self.trial_start + timedelta(days=trial_days)
+        self.subscription_start = None
+        self.subscription_end = None
+        self.subscription_period = None
+        self.last_payment_date = None
+    
+    def activate_subscription(self, period, amount, user):
+        """Activate a paid subscription"""
+        if period not in ['1m', '3m']:
+            raise ValueError("Period must be '1m' or '3m'")
+        
+        today = now().date()
+        
+        # Set subscription dates
+        self.subscription_status = 'active'
+        self.subscription_start = today
+        self.subscription_period = period
+        self.last_payment_date = today
+        
+        # Calculate end date
+        
+
+        if period == '1m':
+            self.subscription_end = today + relativedelta(months=1)
+        elif period == '3m':
+            self.subscription_end = today + relativedelta(months=3)
+                
+        # Clear trial dates
+        self.trial_start = None
+        self.trial_end = None
+
+        
+        self.save()
+        
+        # Create payment record
+        OrganizationPayment.objects.create(
+            organization=self,
+            amount=amount,
+            period=period,
+            payment_date=today,
+            activated_by=user
+        )
+    
+    def expire_subscription_if_needed(self):
+        """Update status based on current dates"""
+        today = now().date()
+        
+        if self.subscription_status == 'trial':
+            if self.trial_end and today > self.trial_end:
+                self.subscription_status = 'expired'
+                self.save()
+        
+        elif self.subscription_status == 'active':
+            if self.subscription_end and today > self.subscription_end:
+                self.subscription_status = 'expired'
+                self.save()
+    def days_until_expiration(self):
+        """Calculate days remaining until subscription expires"""
+        if not self.subscription_end_date:
+            return None
+        
+        today = timezone.now().date()
+        delta = self.subscription_end_date - today
+        return delta.days
+
+    def is_in_grace_period(self):
+        """Check if organization is in grace period"""
+        days_left = self.days_until_expiration()
+        if days_left is None:
+            return False
+        return 0 > days_left >= -self.grace_period_days
+
+    def is_expired(self):
+        """Check if subscription has expired (past grace period)"""
+        days_left = self.days_until_expiration()
+        if days_left is None:
+            return False
+        return days_left < -self.grace_period_days
+
+    def subscription_status(self):
+        """Get human-readable subscription status with color coding"""
+        days_left = self.days_until_expiration()
+        
+        if days_left is None:
+            return {
+                'text': 'غير محدد',
+                'class': 'warning',
+                'days': None
+            }
+        elif days_left > 30:
+            return {
+                'text': 'نشط',
+                'class': 'success',
+                'days': days_left
+            }
+        elif days_left > 7:
+            return {
+                'text': f'{days_left} يوم متبقي',
+                'class': 'info',
+                'days': days_left
+            }
+        elif days_left > 0:
+            return {
+                'text': f'تحذير: {days_left} يوم متبقي',
+                'class': 'warning',
+                'days': days_left
+            }
+        elif self.is_in_grace_period():
+            return {
+                'text': f'فترة سماح: متأخر {abs(days_left)} يوم',
+                'class': 'danger',
+                'days': days_left
+            }
+        else:
+            return {
+                'text': 'منتهي',
+                'class': 'danger',
+                'days': days_left
+            }
+
+    def check_and_update_status(self):
+        """
+        Check subscription status and update is_active flag
+        Call this periodically or in middleware
+        """
+        if self.is_expired():
+            self.is_active = False
+            self.save()
+            return False
+        return True
+
+
+class OrganizationPayment(models.Model):
+    """
+    Tracks subscription payments for organizations
+    Automatically updates organization subscription dates when payment is added
+    """
+    organization = models.ForeignKey(
+        'OrganizationInfo', 
+        on_delete=models.CASCADE, 
+        related_name='subscription_payments'
+    )
+    payment_date = models.DateField(default=timezone.now)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    duration_months = models.IntegerField(
+        default=1,
+        help_text="عدد الأشهر التي يغطيها هذا الدفع"
+    )
+    payment_method = models.CharField(
+        max_length=50,
+        choices=[
+            ('cash', 'نقداً'),
+            ('bank_transfer', 'تحويل بنكي'),
+            ('card', 'بطاقة'),
+            ('check', 'شيك'),
+            ('other', 'أخرى'),
+        ],
+        default='cash'
+    )
+    period = models.CharField(
+        max_length=50,
+        default='monthly',  # ← This fixes the error!
+        choices=[
+            ('monthly', 'شهري'),
+            ('quarterly', 'ربع سنوي'),
+            ('semi_annual', 'نصف سنوي'),
+            ('annual', 'سنوي'),
+            ('custom', 'مخصص'),
+        ],
+        verbose_name="فترة",
+    )
+    notes = models.TextField(blank=True, verbose_name="ملاحظات")
+    processed_by = models.ForeignKey(
+        'auth.User', 
+        on_delete=models.SET_NULL, 
+        null=True,
+        verbose_name="تمت المعالجة بواسطة"
+    )
+    
+    # Auto-calculated fields
+    subscription_start = models.DateField(editable=False)
+    subscription_end = models.DateField(editable=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-payment_date']
+        verbose_name = "دفعة اشتراك جمعية"
+        verbose_name_plural = "دفعات اشتراكات الجمعيات"
+    
+    def save(self, *args, **kwargs):
+        """
+        Automatically calculate subscription dates and update organization
+        """
+        # Calculate subscription start date
+        if not self.subscription_start:
+            # Start from current end date or today (whichever is later)
+            if self.organization.subscription_end_date:
+                # If subscription hasn't expired yet, extend from end date
+                today = timezone.now().date()
+                if self.organization.subscription_end_date >= today:
+                    self.subscription_start = self.organization.subscription_end_date + timedelta(days=1)
+                else:
+                    # Expired, start from today
+                    self.subscription_start = today
+            else:
+                # No previous subscription, start from today
+                self.subscription_start = timezone.now().date()
+        
+        # Calculate end date based on duration
+        self.subscription_end = self.subscription_start + relativedelta(months=self.duration_months) - timedelta(days=1)
+        
+        # Save payment first
+        super().save(*args, **kwargs)
+        
+        # Update organization subscription dates
+        self.organization.subscription_start_date = self.subscription_start
+        self.organization.subscription_end_date = self.subscription_end
+        self.organization.is_active = True
+        self.organization.save()
+    
+    def __str__(self):
+        return f"{self.organization.name} - {self.payment_date} - {self.amount} ريال ({self.duration_months} شهر)"
+
 
 
 class Staff(models.Model):
