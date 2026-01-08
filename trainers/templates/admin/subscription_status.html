@@ -1,7 +1,7 @@
 <!-- templates/pages/subscription_status.html -->
 <!-- BONUS: Subscription status page for users to check their subscription -->
 
-{% extends 'base.html' %}
+{% extends '../base/base.html' %}
 {% load static %}
 
 {% block title %}حالة الاشتراك{% endblock %}
@@ -41,13 +41,7 @@
                                     </p>
                                 {% endif %}
                             </div>
-                            <div class="col-md-4 text-end">
-                                {% if is_admin and days_left and days_left < 30 %}
-                                    <a href="{% url 'subscription_renew' %}" class="btn btn-warning btn-lg">
-                                        <i class="fas fa-sync"></i> تجديد الاشتراك
-                                    </a>
-                                {% endif %}
-                            </div>
+                            
                         </div>
                     </div>
                     
@@ -159,9 +153,6 @@
                         <p class="mb-2">
                             يُنصح بتجديد الاشتراك قبل <strong>{{ next_payment_date }}</strong>
                         </p>
-                        <a href="{% url 'subscription_renew' %}" class="btn btn-sm btn-primary">
-                            تجديد الآن
-                        </a>
                     </div>
                     {% endif %}
                     

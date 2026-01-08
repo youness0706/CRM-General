@@ -21,6 +21,6 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('nojoum_admin/', admin.site.urls),
-    path('',include('trainers.urls'))
+    path('',include('trainers.urls')),
 ]+static(settings.MEDIA_URL
          , document_root=settings.MEDIA_ROOT)

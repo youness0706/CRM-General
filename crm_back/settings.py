@@ -215,6 +215,44 @@ CKEDITOR_CONFIGS = {
         ],
     },
 }
+# Login/Logout Settings
+# Fix for /accounts/login redirect
+LOGIN_URL = 'login'  # This should match your login URL name
+LOGIN_REDIRECT_URL = 'dashboard'  # Where to go after successful login
+LOGOUT_REDIRECT_URL = 'login'  # Where to go after logout
+
+# CSRF Settings (for AJAX to work)
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF cookie
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    # Add your production domain:
+    # 'https://yourdomain.com',
+]
+
+# Cache Settings (for dashboard performance)
+# Development - use dummy cache
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # 5 minutes
+    }
+}
+
+# Production - use Redis (uncomment when ready)
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+#         'LOCATION': 'redis://127.0.0.1:6379/1',
+#         'TIMEOUT': 300,
+#     }
+# }
+
+# Session Settings
+SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_SAVE_EVERY_REQUEST = True
 
 #email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

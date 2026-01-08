@@ -1,0 +1,117 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% block title %}
+    المتدربين
+{% endblock %}
+{% block content %}
+<section class="section m-2">
+    <div class="container">
+        
+        <div class="col-md-4 mt-3">
+            <span id="trainee-count" class="badge bg-primary">عدد المتدربين: {{number}}</span>
+        </div>
+        <div class="col-md-8 mt-3">
+            <a href="{% url 'export_data' 'non_active_trainees' %}" class="btn mr-2 btn-success"><i class="fa-solid fa-download"></i> تحميل</a>
+        </div>
+        <div class="justify-content-center row">
+            <div class="col-lg-12">
+                <div class="candidate-list-widgets mb-4">
+                    <div class="g-2 row">
+                    <div class="col-lg-3">
+                        <div class="filler-job
+-form">
+                            <i class="uil uil-briefcase-alt"></i><input id="search-input" placeholder="اسم المتدرب" type="search" class="form-control filler-job-input-box form-control" onkeyup="filterTrainers()" />
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 mt-3">
+                        <div class="d-flex mb-2">
+                            <button id="activate-btn" class="btn btn-primary me-2">تفعيل المحددين</button>
+                            <button id="select-all" class="btn btn-outline-secondary">تحديد الكل</button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="trainers-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col"></th>
+                                        <th scope="col">الاسم</th>
+                                        <th scope="col">الفئة</th>
+                                        <th scope="col">الهاتف</th>
+                                        <th scope="col">تاريخ البداية</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for t in trainers %}
+                                    <tr class="trainer-row">
+                                        <td><input type="checkbox" class="trainer-checkbox" data-id="{{ t.id }}"></td>
+                                        <td>
+                                            {% if t.id %}
+                                                        <a class="primary-link" href="{% url 'profile' t.id %}">{{ t.first_name }} {{ t.last_name }}</a>
+                                                    {% else %}
+                                                        {{ t.first_name }} {{ t.last_name }}
+                                                {% endif %}
+                                        </td>
+                                        <td>{{ t.get_category_display }}</td>
+                                        <td>{{ t.phone }}</td>
+                                        <td>{{ t.started_day }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="5">لا يوجد متدربين غير نشطين</td></tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <script>
+                        function getSelectedTrainerIds(){
+                            const checkboxes = document.querySelectorAll('.trainer-checkbox:checked');
+                            return Array.from(checkboxes).map(cb => cb.getAttribute('data-id'));
+                        }
+
+                        document.getElementById('activate-btn').addEventListener('click', function(){
+                            const ids = getSelectedTrainerIds();
+                            if(!ids.length){
+                                alert('الرجاء تحديد متدربين أولاً');
+                                return;
+                            }
+
+                            if(!confirm('هل تريد تفعيل المتدربين المحددين؟')) return;
+
+                            fetch("{% url 'bulk_activate_trainers' %}", {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({trainer_ids: ids})
+                            }).then(r => r.json()).then(data => {
+                                if(data.success){
+                                    alert(data.message || 'تم التفعيل');
+                                    // remove activated rows from table
+                                    ids.forEach(id => {
+                                        const cb = document.querySelector('.trainer-checkbox[data-id="'+id+'"]');
+                                        if(cb){ cb.closest('tr').remove(); }
+                                    });
+                                } else {
+                                    alert(data.error || 'حدث خطأ');
+                                }
+                            }).catch(err => { alert('خطأ في الاتصال'); console.error(err); });
+                        });
+
+                        document.getElementById('select-all').addEventListener('click', function(){
+                            const checkboxes = document.querySelectorAll('.trainer-checkbox');
+                            const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
+                            checkboxes.forEach(cb => cb.checked = anyUnchecked);
+                            this.textContent = anyUnchecked ? 'إلغاء التحديد' : 'تحديد الكل';
+                        });
+
+                        function filterTrainers(){
+                            const q = document.getElementById('search-input').value.trim().toLowerCase();
+                            document.querySelectorAll('#trainers-table tbody tr.trainer-row').forEach(tr => {
+                                const name = tr.cells[1].textContent.trim().toLowerCase();
+                                tr.style.display = name.includes(q) ? '' : 'none';
+                            });
+                        }
+                    </script>
+{% endblock %}

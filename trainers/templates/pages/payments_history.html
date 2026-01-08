@@ -1,43 +1,89 @@
 {% extends 'base/base.html' %}
-{% block title %}
-    قائمة الدفعات
-{% endblock %}
+{% load static %}
+
+{% block title %}قائمة الدفعات{% endblock %}
+
 {% block content %}
+<!-- CSRF Token -->
+{% csrf_token %}
 
 <div class="container mt-5">
     <h2 class="text-center mb-4">قائمة الدفعات</h2>
-    <a href="{% url 'export_data' 'payments' %}" class="btn btn-success"><i class="fa-solid fa-download"></i> تحميل</a>
-    <a href="{% url 'add_payment' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> إضافة دفعة</a>
+    
+    <!-- Action Buttons -->
+    <div class="mb-3">
+        <a href="{% url 'export_data' 'payments' %}" class="btn btn-success">
+            <i class="fa-solid fa-download"></i> تحميل
+        </a>
+        <a href="{% url 'add_payment' %}" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> إضافة دفعة
+        </a>
+    </div>
     
     <!-- Search Form -->
-    <form method="GET" class="filler-job-form mt-3 mb-3">
-        <i class="uil uil-briefcase-alt"></i>
-        <input 
-            name="search" 
-            value="{{ search_query }}"
-            placeholder=" اسم المتدرب او نوع الدفعة" 
-            type="search" 
-            class="form-control filler-job-input-box form-control"
-        />
-        <button type="submit" class="btn btn-primary mt-2">بحث</button>
-        {% if search_query %}
-            <a href="{% url 'payments_history' %}" class="btn btn-secondary mt-2">إلغاء البحث</a>
-        {% endif %}
-    </form>
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <div class="filler-job-form">
+                <i class="uil uil-briefcase-alt"></i>
+                <input 
+                    id="search-input"
+                    placeholder="اسم المتدرب أو نوع الدفعة" 
+                    type="search" 
+                    class="form-control filler-job-input-box"
+                />
+            </div>
+        </div>
+        <div class="col-md-4">
+            <button id="clear-search-btn" class="btn btn-secondary" style="display: none;">
+                <i class="fa-solid fa-times"></i> إلغاء البحث
+            </button>
+        </div>
+    </div>
     
     <!-- Results Summary -->
-    <p class="text-muted">
-        {% if search_query %}
-            نتائج البحث: {{ paginator.count }} دفعة
-        {% else %}
-            إجمالي الدفعات: {{ paginator.count }}
-        {% endif %}
+    <p class="text-muted" id="results-summary">
+        إجمالي الدفعات: <span id="total-count">0</span>
     </p>
     
-    <div class="table-responsive">
+    <!-- Bulk Actions Bar -->
+    <div class="row" id="bulkActionsBar" style="display: none;">
+        <div class="col-12">
+            <div class="card bg-warning text-dark mb-3">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>تم تحديد <span id="selectedCount">0</span> دفعة</strong>
+                        </div>
+                        <div>
+                            <button class="btn btn-danger btn-sm me-2" id="bulkDeleteBtn">
+                                <i class="fas fa-trash"></i> حذف المحددة
+                            </button>
+                            <button class="btn btn-secondary btn-sm" id="clearSelectionBtn">
+                                إلغاء التحديد
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">جاري التحميل...</span>
+        </div>
+        <p class="mt-3 text-muted">جاري تحميل البيانات...</p>
+    </div>
+    
+    <!-- Payments Table -->
+    <div class="table-responsive" id="table-container" style="display: none;">
         <table class="table table-bordered text-center">
             <thead class="table-dark">
                 <tr>
+                    <th scope="col">
+                        <input class="form-check-input select-all-checkbox" type="checkbox" id="selectAll">
+                    </th>
                     <th scope="col">نوع الدفعة</th>
                     <th scope="col">المتدرب</th>
                     <th scope="col">المبلغ</th>
@@ -45,60 +91,426 @@
                     <th scope="col">إجراءات</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for payment in payments %}
-                <tr>
-                    <td>{{ payment.get_paymentCategry_display }}</td>
-                    <td>{{ payment.trainer }}</td>
-                    <td>{{ payment.paymentAmount }}</td>
-                    <td>{{ payment.paymentdate }}</td>
-                    <td>
-                        <a href="{% url 'edit_payment' payment.id %}" class="btn btn-warning btn-sm">تعديل</a>
-                        <form action="{% url 'delete_payment' payment.id %}" method="post" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد من الحذف؟')">حذف</button>
-                        </form>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" class="text-muted">لا توجد دفعات مسجلة.</td>
-                </tr>
-                {% endfor %}
+            <tbody id="payments-tbody">
+                <!-- Dynamic content loaded via JavaScript -->
             </tbody>
         </table>
     </div>
     
-    <!-- Pagination Controls -->
-    {% if paginator.num_pages > 1 %}
-    <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">الأولى</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">السابقة</a>
-                </li>
-            {% endif %}
-            
-            <li class="page-item active">
-                <span class="page-link">
-                    صفحة {{ page_obj.number }} من {{ paginator.num_pages }}
-                </span>
-            </li>
-            
-            {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">التالية</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">الأخيرة</a>
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
+    <!-- Pagination Container -->
+    <div id="pagination-container" class="mt-4">
+        <!-- Dynamic pagination loaded via JavaScript -->
+    </div>
 </div>
+
+<style>
+.payment-checkbox,
+.select-all-checkbox {
+    width: 1.2em;
+    height: 1.2em;
+    cursor: pointer;
+}
+
+#bulkActionsBar {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+.loading-overlay {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0,0,0,0.02);
+}
+
+.pagination {
+    margin-top: 20px;
+}
+
+.page-link {
+    color: #4e73df;
+}
+
+.page-item.active .page-link {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
+</style>
+
+<!-- Payments List JavaScript -->
+<script>
+class PaymentsManager {
+    constructor() {
+        this.selectedPayments = new Set();
+        this.currentPage = 1;
+        this.searchQuery = '';
+        this.init();
+    }
+
+    async init() {
+        this.setupEventListeners();
+        await this.loadPayments();
+    }
+
+    setupEventListeners() {
+        // Search input with debounce
+        let searchTimeout;
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.searchQuery = e.target.value;
+                this.currentPage = 1;
+                this.loadPayments();
+                
+                // Show/hide clear button
+                const clearBtn = document.getElementById('clear-search-btn');
+                clearBtn.style.display = this.searchQuery ? 'inline-block' : 'none';
+            }, 500);
+        });
+
+        // Clear search button
+        document.getElementById('clear-search-btn').addEventListener('click', () => {
+            document.getElementById('search-input').value = '';
+            this.searchQuery = '';
+            this.currentPage = 1;
+            this.loadPayments();
+            document.getElementById('clear-search-btn').style.display = 'none';
+        });
+
+        // Bulk actions
+        document.getElementById('bulkDeleteBtn').addEventListener('click', () => {
+            this.bulkDelete();
+        });
+
+        document.getElementById('clearSelectionBtn').addEventListener('click', () => {
+            this.clearSelection();
+        });
+
+        // Delegate checkbox events
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('payment-checkbox')) {
+                this.handleCheckboxChange(e.target);
+            } else if (e.target.id === 'selectAll') {
+                this.handleSelectAllChange(e.target);
+            }
+        });
+    }
+
+    async loadPayments() {
+        document.getElementById('loadingIndicator').style.display = 'block';
+        document.getElementById('table-container').style.display = 'none';
+
+        try {
+            const params = new URLSearchParams({
+                page: this.currentPage,
+                per_page: 25,
+                ...this.searchQuery && { search: this.searchQuery }
+            });
+
+            const response = await fetch(`/api/payments-list/?${params}`);
+            const data = await response.json();
+
+            this.renderPayments(data.payments);
+            this.renderPagination(data);
+            
+            // Safely update count elements
+            const totalCountEl = document.getElementById('total-count');
+            const resultsSummaryEl = document.getElementById('results-summary');
+            
+            if (totalCountEl) {
+                totalCountEl.textContent = data.total_count;
+            }
+            
+            if (resultsSummaryEl) {
+                resultsSummaryEl.innerHTML = 
+                    this.searchQuery 
+                        ? `نتائج البحث: ${data.total_count} دفعة`
+                        : `إجمالي الدفعات: ${data.total_count}`;
+            }
+
+            document.getElementById('loadingIndicator').style.display = 'none';
+            document.getElementById('table-container').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error loading payments:', error);
+            document.getElementById('loadingIndicator').innerHTML = `
+                <div class="alert alert-danger">
+                    حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.
+                </div>
+            `;
+        }
+    }
+
+    renderPayments(payments) {
+        const tbody = document.getElementById('payments-tbody');
+        
+        if (payments.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-muted">لا توجد دفعات مسجلة.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = payments.map(payment => `
+            <tr>
+                <td>
+                    <input 
+                        class="form-check-input payment-checkbox" 
+                        type="checkbox" 
+                        value="${payment.id}"
+                        id="payment${payment.id}"
+                    >
+                </td>
+                <td>${payment.category}</td>
+                <td>${payment.trainer_name}</td>
+                <td>${payment.amount} DH</td>
+                <td>${payment.date}</td>
+                <td>
+                    <a href="/payment_edit/${payment.id}/" class="btn btn-warning btn-sm">
+                        <i class="fa-solid fa-edit"></i> تعديل
+                    </a>
+                    <button 
+                        class="btn btn-danger btn-sm delete-single-btn" 
+                        data-payment-id="${payment.id}"
+                    >
+                        <i class="fa-solid fa-trash"></i> حذف
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+        // Add single delete handlers
+        tbody.querySelectorAll('.delete-single-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const paymentId = e.target.closest('button').dataset.paymentId;
+                this.deleteSinglePayment(paymentId);
+            });
+        });
+    }
+
+    renderPagination(data) {
+        const container = document.getElementById('pagination-container');
+        
+        if (data.total_pages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let paginationHtml = '<nav><ul class="pagination justify-content-center">';
+
+        // First page
+        if (data.has_previous) {
+            paginationHtml += `
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="1">الأولى</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="${data.page - 1}">السابقة</a>
+                </li>
+            `;
+        }
+
+        // Current page indicator
+        paginationHtml += `
+            <li class="page-item active">
+                <span class="page-link">صفحة ${data.page} من ${data.total_pages}</span>
+            </li>
+        `;
+
+        // Next and last page
+        if (data.has_next) {
+            paginationHtml += `
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="${data.page + 1}">التالية</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="${data.total_pages}">الأخيرة</a>
+                </li>
+            `;
+        }
+
+        paginationHtml += '</ul></nav>';
+        container.innerHTML = paginationHtml;
+
+        // Add click handlers
+        container.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (e.target.dataset.page) {
+                    this.currentPage = parseInt(e.target.dataset.page);
+                    this.loadPayments();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        });
+    }
+
+    handleCheckboxChange(checkbox) {
+        if (checkbox.checked) {
+            this.selectedPayments.add(checkbox.value);
+        } else {
+            this.selectedPayments.delete(checkbox.value);
+        }
+        this.updateBulkActionsBar();
+        this.updateSelectAllCheckbox();
+    }
+
+    handleSelectAllChange(checkbox) {
+        const allCheckboxes = document.querySelectorAll('.payment-checkbox');
+        allCheckboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+            if (checkbox.checked) {
+                this.selectedPayments.add(cb.value);
+            } else {
+                this.selectedPayments.delete(cb.value);
+            }
+        });
+        this.updateBulkActionsBar();
+    }
+
+    updateSelectAllCheckbox() {
+        const selectAll = document.getElementById('selectAll');
+        const allCheckboxes = document.querySelectorAll('.payment-checkbox');
+        const checkedCount = document.querySelectorAll('.payment-checkbox:checked').length;
+        
+        if (checkedCount === allCheckboxes.length && allCheckboxes.length > 0) {
+            selectAll.checked = true;
+            selectAll.indeterminate = false;
+        } else if (checkedCount > 0) {
+            selectAll.checked = false;
+            selectAll.indeterminate = true;
+        } else {
+            selectAll.checked = false;
+            selectAll.indeterminate = false;
+        }
+    }
+
+    updateBulkActionsBar() {
+        const count = this.selectedPayments.size;
+        const bar = document.getElementById('bulkActionsBar');
+        
+        if (count > 0) {
+            bar.style.display = 'block';
+            document.getElementById('selectedCount').textContent = count;
+        } else {
+            bar.style.display = 'none';
+        }
+    }
+
+    clearSelection() {
+        document.querySelectorAll('.payment-checkbox, #selectAll').forEach(cb => {
+            cb.checked = false;
+            cb.indeterminate = false;
+        });
+        this.selectedPayments.clear();
+        this.updateBulkActionsBar();
+    }
+
+    async deleteSinglePayment(paymentId) {
+        if (!confirm('هل أنت متأكد من حذف هذه الدفعة؟')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/bulk-delete-payments/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCSRFToken()
+                },
+                body: JSON.stringify({
+                    payment_ids: [paymentId]
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('تم حذف الدفعة بنجاح');
+                await this.loadPayments();
+            } else {
+                alert('خطأ: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('حدث خطأ أثناء الحذف');
+        }
+    }
+
+    async bulkDelete() {
+        if (this.selectedPayments.size === 0) {
+            alert('يرجى تحديد دفعات أولاً');
+            return;
+        }
+
+        if (!confirm(`هل أنت متأكد من حذف ${this.selectedPayments.size} دفعة؟`)) {
+            return;
+        }
+
+        const btn = document.getElementById('bulkDeleteBtn');
+        btn.classList.add('loading-overlay');
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/api/bulk-delete-payments/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCSRFToken()
+                },
+                body: JSON.stringify({
+                    payment_ids: Array.from(this.selectedPayments)
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert(data.message);
+                this.selectedPayments.clear();
+                this.updateBulkActionsBar();
+                await this.loadPayments();
+            } else {
+                alert('خطأ: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('حدث خطأ أثناء الحذف');
+        } finally {
+            btn.classList.remove('loading-overlay');
+            btn.disabled = false;
+        }
+    }
+
+    getCSRFToken() {
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        if (!cookieValue) {
+            cookieValue = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        }
+        return cookieValue;
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    new PaymentsManager();
+});
+</script>
 
 {% endblock %}

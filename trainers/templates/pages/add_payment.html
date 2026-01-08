@@ -1,73 +1,115 @@
 {% extends 'base/base.html' %}
-{% block title %}
-    إضافة الدفع
-{% endblock %}
+{% load static %}
+
+{% block title %}إضافة الدفع{% endblock %}
+
 {% block content %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet"/>
-    
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: Arial, sans-serif;
-        }
-        .form-container {
-            max-width: 600px;
-            margin: 50px auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        .form-container h2 {
-            margin-bottom: 20px;
-            font-weight: bold;
-            text-align: center;
-            color: #007bff;
-        }
-        .btn-primary {
-            background-color: #007bff;
-            border: none;
-        }
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
-    </style>
+<!-- CSRF Token -->
+{% csrf_token %}
 
-    <script>
-        $(document).ready(function() {
-            // تفعيل Select2
-            $('#trainer').select2({
-                placeholder: " اكتب اسم المتدرب هنا",
-                allowClear: true
-            });
-        });
-    </script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
+<style>
+body {
+    background-color: #f8f9fa;
+    font-family: 'Cairo', Arial, sans-serif;
+}
+
+.form-container {
+    max-width: 600px;
+    margin: 50px auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.form-container h2 {
+    margin-bottom: 30px;
+    font-weight: bold;
+    text-align: center;
+    color: #007bff;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border: none;
+    padding: 12px;
+    font-size: 1.1rem;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #333;
+}
+
+.select2-container {
+    width: 100% !important;
+}
+
+.success-message {
+    display: none;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 5px;
+    color: #155724;
+}
+
+.error-message {
+    display: none;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 5px;
+    color: #721c24;
+}
+</style>
 
 <div class="form-container">
     <h2>إضافة الدفع</h2>
-    <form method="POST" action="{% url 'add_payment' %}">
+    
+    <!-- Success Message -->
+    <div id="successMessage" class="success-message">
+        <i class="fas fa-check-circle"></i> تم إضافة الدفع بنجاح!
+    </div>
+    
+    <!-- Error Message -->
+    <div id="errorMessage" class="error-message">
+        <i class="fas fa-exclamation-circle"></i> <span id="errorText"></span>
+    </div>
+    
+    <form id="paymentForm" method="POST">
         {% csrf_token %}
 
         <div class="mb-3">
-            <label for="trainer" class="form-label">المتدرب:</label>
-            <select name="trainer" id="trainer" class="form-control trainee">
-                <option value="" disabled selected hidden>اختر المدرب</option>
-                {% for trainer in trainers %}
-                    <option value="{{ trainer.id }}">{{ trainer.first_name }} {{ trainer.last_name }}</option>
-                {% endfor %}
+            <label for="trainer" class="form-label">المتدرب: *</label>
+            <select name="trainer" id="trainer" class="form-control" required>
+                <option value="" disabled selected>اختر المتدرب</option>
             </select>
+            <small class="form-text text-muted">ابحث عن المتدرب بالاسم</small>
         </div>
 
         <div class="mb-3">
-            <label for="paymentdate" class="form-label">تاريخ الدفع:</label>
+            <label for="paymentdate" class="form-label">تاريخ الدفع: *</label>
             <input type="date" name="paymentdate" id="paymentdate" class="form-control" required>
         </div>
 
         <div class="mb-3">
-            <label for="paymentCategry" class="form-label">فئة الدفع:</label>
-            <select name="paymentCategry" id="paymentCategry" class="form-control">
+            <label for="paymentCategry" class="form-label">فئة الدفع: *</label>
+            <select name="paymentCategry" id="paymentCategry" class="form-control" required>
                 <option value="month" selected>شهرية</option>
                 <option value="subscription">انخراط</option>
                 <option value="assurance">التأمين</option>
@@ -76,22 +118,197 @@
         </div>
 
         <div class="mb-3">
-            <label for="paymentAmount" class="form-label">مبلغ الدفع:DH</label>
-            <input type="number" name="paymentAmount" id="paymentAmount" class="form-control" placeholder="أدخل المبلغ" required>
+            <label for="paymentAmount" class="form-label">مبلغ الدفع (DH): *</label>
+            <input 
+                type="number" 
+                name="paymentAmount" 
+                id="paymentAmount" 
+                class="form-control" 
+                placeholder="أدخل المبلغ" 
+                min="0"
+                step="0.01"
+                required
+            >
         </div>
 
-        <button type="submit" class="btn btn-primary w-100">إضافة</button>
+        <button type="submit" class="btn btn-primary w-100" id="submitBtn">
+            <span id="submitText">إضافة</span>
+            <span id="submitSpinner" style="display: none;">
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                جاري الحفظ...
+            </span>
+        </button>
     </form>
+    
+    <div class="mt-3 text-center">
+        <a href="{% url 'payments_history' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-right"></i> العودة إلى قائمة الدفعات
+        </a>
+    </div>
 </div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
 <script>
-    $(document).ready(function() {
-        $('.trainee').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'اختر',
-                dir: 'rtl',
-                language: 'ar'
+class PaymentFormManager {
+    constructor() {
+        this.form = document.getElementById('paymentForm');
+        this.submitBtn = document.getElementById('submitBtn');
+        this.init();
+    }
+
+    init() {
+        // Initialize Select2 for trainer selection with AJAX
+        $('#trainer').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'ابحث عن المتدرب...',
+            dir: 'rtl',
+            language: 'ar',
+            allowClear: true,
+            minimumInputLength: 0,
+            ajax: {
+                url: '/api/trainers-for-payment/',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        search: params.term,
+                        page: params.page || 1
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data.results,
+                        pagination: {
+                            more: data.pagination.more
+                        }
+                    };
+                },
+                cache: true
+            }
+        });
+
+        // Set default date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('paymentdate').value = today;
+
+        // Form submission
+        this.form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleSubmit();
+        });
+    }
+
+    async handleSubmit() {
+        // Validate form
+        if (!this.form.checkValidity()) {
+            this.form.reportValidity();
+            return;
+        }
+
+        // Disable submit button
+        this.submitBtn.disabled = true;
+        document.getElementById('submitText').style.display = 'none';
+        document.getElementById('submitSpinner').style.display = 'inline';
+
+        // Hide previous messages
+        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'none';
+
+        try {
+            const formData = new FormData(this.form);
+            
+            const response = await fetch('{% url "add_payment" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             });
-    });
+
+            if (response.redirected) {
+                // Successfully saved, redirect
+                window.location.href = response.url;
+                return;
+            }
+
+            const data = await response.json();
+
+            if (data.success === false) {
+                throw new Error(data.error);
+            }
+
+            // Show success message
+            document.getElementById('successMessage').style.display = 'block';
+            
+            // Reset form
+            this.form.reset();
+            $('#trainer').val(null).trigger('change');
+            
+            // Set date back to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('paymentdate').value = today;
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Redirect after 2 seconds
+            setTimeout(() => {
+                window.location.href = '{% url "added_payment" %}';
+            }, 2000);
+
+        } catch (error) {
+            console.error('Error:', error);
+            
+            // Show error message
+            document.getElementById('errorText').textContent = error.message || 'حدث خطأ أثناء إضافة الدفع';
+            document.getElementById('errorMessage').style.display = 'block';
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        } finally {
+            // Re-enable submit button
+            this.submitBtn.disabled = false;
+            document.getElementById('submitText').style.display = 'inline';
+            document.getElementById('submitSpinner').style.display = 'none';
+        }
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    new PaymentFormManager();
+});
+
+// Arabic translations for Select2
+$.fn.select2.amd.define('select2/i18n/ar', [], function() {
+    return {
+        errorLoading: function() {
+            return 'لا يمكن تحميل النتائج';
+        },
+        inputTooLong: function(args) {
+            return 'الرجاء حذف ' + (args.input.length - args.maximum) + ' عناصر';
+        },
+        inputTooShort: function(args) {
+            return 'الرجاء إضافة ' + (args.minimum - args.input.length) + ' عناصر';
+        },
+        loadingMore: function() {
+            return 'جاري تحميل نتائج إضافية...';
+        },
+        maximumSelected: function(args) {
+            return 'تستطيع إختيار ' + args.maximum + ' بنود فقط';
+        },
+        noResults: function() {
+            return 'لم يتم العثور على أي نتائج';
+        },
+        searching: function() {
+            return 'جاري البحث…';
+        }
+    };
+});
 </script>
 
 {% endblock %}

@@ -16,152 +16,9 @@ from .middleware import require_organization
 from decimal import Decimal
 
 
-
-
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-import json
-
-@login_required(login_url='/login/')
-@require_organization
-def Home(request):        
-    organization = request.organization
-    staff = Staff.objects.get(user=request.user)
-    if staff.is_admin:
-
-        now = timezone.now()
-        today = now.date()
-        # Financial summaries
-        paymentss = Payments.objects.filter(organization=organization)
-        financial_summary = {
-            'total_yearly_income': paymentss.filter(
-                paymentdate__year=today.year
-            ).aggregate(total=Sum('paymentAmount'))['total'] or 0,
-            'monthly_income': paymentss.filter(
-                paymentdate__year=today.year,
-                paymentdate__month=today.month
-            ).aggregate(total=Sum('paymentAmount'))['total'] or 0,
-            'today_income': paymentss.filter(
-                paymentdate=today
-            ).aggregate(total=Sum('paymentAmount'))['total'] or 0
-        }
-
-        payment_categories = {
-            'month': {
-                'label': 'شهرية', 
-                'frequency': 'monthly', 
-                'grace_days': 0
-            },
-            'subscription': {
-                'label': 'انخراط', 
-                'frequency': 'yearly', 
-                'grace_days': 0
-            },
-            'assurance': {
-                'label': 'التأمين', 
-                'frequency': 'yearly', 
-                'grace_days': 0
-            },'jawaz': {
-                'label': 'جواز', 
-                'frequency': 'yearly', 
-                'grace_days': 0
-            }
-        }
-
-        payment_status = {}
-
-        for category, category_info in payment_categories.items():
-            trainers = Trainer.objects.filter(is_active=True, organization=organization)
-            unpaid_trainers = []
-
-            for trainer in trainers:
-                # Retrieve the last payment for the trainer in this category
-                last_payment = paymentss.filter(
-                    trainer=trainer,
-                    paymentCategry=category
-                ).order_by('-paymentdate').first()
-
-                if last_payment:
-
-                    payment_due_date = None
-                    
-                    if category_info['frequency'] == 'monthly':
-                        payment_due_date = last_payment.paymentdate + relativedelta(months=1)
-                        
-                    
-                    elif category_info['frequency'] == 'yearly':
-                        payment_due_date = last_payment.paymentdate.replace(
-                            year=last_payment.paymentdate.year + 1
-                        ) + timedelta(days=category_info['grace_days'])
-
-                    # Check if payment is overdue
-                    if today >= payment_due_date:
-                        unpaid_trainers.append({
-                            'trainer_id': trainer.id,  # Added trainer ID
-                            'trainer_name': f"{trainer.first_name} {trainer.last_name}",
-                            'last_payment_date': last_payment.paymentdate
-                        })
-                        
-                        
-                else:
-                    # Trainer has never paid in this category
-                    unpaid_trainers.append({
-                        'trainer_id': trainer.id,  # Added trainer ID
-                        'trainer_name': f"{trainer.first_name} {trainer.last_name}",
-                        'last_payment_date': None
-                    })
-            
-            payment_status[category] = {
-                'label': category_info['label'],
-                'unpaid_trainers': unpaid_trainers,
-                'total_unpaid_trainers': len(unpaid_trainers)
-            }
-        # Paid today trainees
-        paid_today_trainees = paymentss.filter(paymentdate=today).select_related('trainer')
-        paid_today_trainees = [
-            {
-                "trainer_name": f"{payment.trainer.first_name} {payment.trainer.last_name}",
-                "payment_date": payment.paymentdate,
-                "payment_category": payment.get_paymentCategry_display(),
-                "payment_amount": payment.paymentAmount
-            }
-            for payment in paid_today_trainees
-        ]
-
-        # Chart data
-        chart_labels = [str(m) for m in range(1, 13)]  # Months 1-12
-        chart_data = {category: [0] * 12 for category in payment_categories}
-
-        for category in payment_categories:
-            category_income = paymentss.filter(
-                paymentCategry=category,
-                paymentdate__year=today.year
-            ).values('paymentdate__month').annotate(
-                total_income=Sum('paymentAmount')
-            )
-
-            for entry in category_income:
-                month = entry['paymentdate__month'] - 1
-                chart_data[category][month] = entry['total_income']
-
-        safe_chart_data = {
-        key: json.dumps(value, default=float)   # <--- FIXED HERE
-        for key, value in chart_data.items()
-    }
-        # Prepare context
-        context = {
-            'financial_summary': financial_summary,  # Financial overview
-            'chart_labels': json.dumps(chart_labels),  # Chart labels
-            'chart_data': safe_chart_data,  # Chart data
-            'payment_status': payment_status,  # Payment tracking details
-            'paid_today_trainees': paid_today_trainees,  # Trainees who paid today
-            
-        }
-
-        return render(request, "pages/index.html", context)
-    else:
-        return redirect('dashboard')
 
 
 def landing_page(request):
@@ -510,57 +367,7 @@ def added_payment(request):
         
         return render(request,"pages/added_payment.html")
 
-@login_required(login_url='/login/')
-@require_organization
-def payments_history(request):
-        organization = request.organization
-        from django.core.paginator import Paginator
-
-        # Get search query from GET parameters
-        search_query = request.GET.get('search', '').strip()
-        
-        # Start with all payments
-        payments = Payments.objects.select_related('trainer').filter(organization=organization)
-        
-        # Apply search filter if query exists
-        if search_query:
-            from django.db.models.functions import Concat
-
-            payments = payments.annotate(
-                trainer_full_name=Concat(
-                    'trainer__first_name',
-                    Value(' '),
-                    'trainer__last_name'
-                )
-            ).filter(
-                Q(trainer__first_name__icontains=search_query) |
-                Q(trainer__last_name__icontains=search_query) |
-                Q(trainer_full_name__icontains=search_query) |
-                Q(paymentCategry__icontains=search_query)
-            )
-        
-        # Order by most recent
-        payments = payments.order_by('-id')
-        
-        # Paginate: 25 items per page (adjust as needed)
-        paginator = Paginator(payments, 25)
-        page_number = request.GET.get('page', 1)
-        page_obj = paginator.get_page(page_number)
-        
-        context = {
-            'payments': page_obj,
-            'search_query': search_query,
-            'paginator': paginator,
-            'page_obj': page_obj
-        }
-        return render(request, "pages/payments_history.html", context)
-    
-@login_required(login_url='/login/')
-@require_organization
-def payments_del(request,id):
-        org=request.organization
-        Payments.objects.get(organization=org, pk=id).delete()
-        return redirect("payments_history")
+   
 
 @login_required(login_url='/login/')
 @require_organization
@@ -858,27 +665,6 @@ def download_documents(request):
 
 
 
-
-from django.db.models import Q,Value
-@login_required(login_url='/login/')
-@require_organization
-def trainees(request,category):
-    organization = request.organization
-    trainers = Trainer.objects.filter(organization=organization)
-    if category!="all":
-        trainers = trainers.filter(category=category)
-    else:
-        trainers = trainers.exclude(category="women")
-    if request.method == "GET":
-        if 'gender' in request.GET and request.GET['gender']:trainers= trainers.filter(male_female= request.GET['gender'])
-        if 'order' in  request.GET:
-            if request.GET['order']=='first_first':trainers= trainers.order_by('-started_day')
-            if request.GET['order']=='last_first':trainers= trainers.order_by('started_day')
-            if request.GET['order']=='first_name':trainers= trainers.order_by('last_name')
-                    
-    
-    template = loader.get_template('pages/olders.html')
-    return HttpResponse(template.render({'trainers':trainers,'number':trainers.count()},request))
 
 
 @login_required(login_url='/login/')
@@ -1732,6 +1518,15 @@ def login_view(request):
         if user:
             # Login first
             login(request, user)
+            
+            # Handle "Remember Me" checkbox
+            remember_me = request.POST.get('remember_me') == 'on'
+            if remember_me:
+                # Set session to persist for 30 days
+                request.session.set_expiry(30 * 24 * 60 * 60)  # 30 days in seconds
+            else:
+                # Session expires when browser closes
+                request.session.set_expiry(0)
             
             # Now check if the user has a staff record
             try:
@@ -2792,3 +2587,25 @@ def complete_social_signup(request):
             messages.error(request, f'حدث خطأ: {str(e)}')
     
     return render(request, 'pages/complete_social_signup.html')
+
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_clear_cache(request):
+    from django.core.cache import cache
+    from django.utils import timezone
+    
+    today = timezone.now().date()
+    org_id = request.organization.id
+    
+    cache_keys = [
+        f'financial_summary_{org_id}_{today}',
+        f'chart_data_{org_id}_{today}',
+    ]
+    cache.delete_many(cache_keys)
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'تم تحديث البيانات بنجاح'
+    })

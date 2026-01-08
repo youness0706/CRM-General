@@ -1,10 +1,10 @@
 from django.urls import path,include
 from . import views
+from . import payments_urls,index_urls,trainees_urls
 
 urlpatterns = [ 
-    path('', views.Home, name='home'),
     #Trainees
-    path('olders/<str:category>', views.trainees, name='trainees'),
+    
     path('profile/<int:id>', views.trainee_profile, name='profile'),
     path('add_trainee', views.add_trainee, name='add_trainee'),
     path('register/<slug:org_slug>/', views.addme, name='addme'),
@@ -17,8 +17,6 @@ urlpatterns = [
     path('added_payment/', views.added_payment, name='added_payment'),
     path('added_payments_history/', views.added_payments_history, name='added_payments_history'),
     path('delete_pay/<int:id>', views.delete_pay, name='delete_pay'),
-    path('payments_history/', views.payments_history, name='payments_history'),
-    path('payments_del/<int:id>', views.payments_del, name='delete_payment'),
     path('payment_edit/<int:id>', views.payment_edit, name='edit_payment'),
     #JAWAZ
     path('add_article', views.add_article, name='add_article'),
@@ -28,7 +26,6 @@ urlpatterns = [
     path('edit_article/<int:id>', views.edit_article, name='edit_article'),
     path('delete_article/<int:id>', views.remove_article, name='delete_article'),
     #Financial
-    path('finantial_status/',views.finantial_status,name='finantial_status'),
     path('add_expenses/',views.add_expenses,name='add_expenses'),
     path('expenses_history/',views.expenses_history,name='expenses_history'),
     path('expenses_del/<int:id>',views.delete_expense,name='delete_cost'),
@@ -63,8 +60,12 @@ urlpatterns = [
     path('api/check-username/', views.check_username, name='check_username'),
     path('api/check-slug/', views.check_slug, name='check_slug'),
     path('subscription/expired/', views.subscription_status_view, name='subscription_expired'),
+    path('renew-subscription/', views.subscription_renew_view, name='subscription_renew'),
 
     #Landing page
     path('landing_page/', views.landing_page, name='landing_page'),
 
-]
+
+    path('api/clear-cache/', views.api_clear_cache, name='api_clear_cache'),
+
+] + payments_urls.urlpatterns + index_urls.urlpatterns + trainees_urls.urlpatterns

@@ -11,7 +11,7 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <ul class="navbar-nav me-auto z-3 mb-2 mb-lg-0">
                 <li class="nav-item">
                     <a class="nav-link active" aria-current="page" href="{% url 'home' %}">الرئيسية</a>
                 </li>
@@ -22,7 +22,7 @@
                     <a class="nav-link dropdown-toggle" href="#" id="traineesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         المتدربون
                     </a>
-                    <ul class="dropdown-menu text-right" aria-labelledby="traineesDropdown">
+                    <ul class="dropdown-menu z-3 text-right" aria-labelledby="traineesDropdown">
                         <li><a class="dropdown-item" href="{% url 'trainees' 'كبار' %}">الكبار</a></li><hr>
                         <li><a class="dropdown-item" href="{% url 'trainees' 'شبان' %}">الشبان</a></li><hr>
                         <li><a class="dropdown-item" href="{% url 'trainees' 'فتيان' %}">الفتيان</a></li><hr>
@@ -30,14 +30,15 @@
                         <li><a class="dropdown-item" href="{% url 'trainees' 'نساء' %}">المتدربات النساء</a></li><hr>
                         <li><a class="dropdown-item" href="{% url 'trainees' 'all' %}">الكل</a></li><hr>
                         <li><a class="dropdown-item" href="{% url 'add_trainee' %}">اضافة متدرب جديد</a></li><hr>
-                        <li><a class="dropdown-item" href="{% url 'add_women' %}">اضافة امرأة</a></li>
+                        <li><a class="dropdown-item" href="{% url 'add_women' %}">اضافة امرأة</a></li><hr>
+                        <li><a class="dropdown-item" href="{% url 'non_active_trainees' %}">غير النشطين</a></li>
                     </ul>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="activitiesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         الأنشطة
                     </a>
-                    <ul class="dropdown-menu text-right" aria-labelledby="activitiesDropdown">
+                    <ul class="dropdown-menu z-3 text-right" aria-labelledby="activitiesDropdown">
                         <li><a class="dropdown-item" href="{% url 'articles' 'test' %}">الامتحانات</a></li>
                         <li><a class="dropdown-item" href="{% url 'articles' 'dawri' %}">الدوريات</a></li>
                         <li><a class="dropdown-item" href="{% url 'articles' 'training' %}">التداريب</a></li>
@@ -50,7 +51,7 @@
                     <a class="nav-link dropdown-toggle " href="#" id="paymentsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         دفعات
                     </a>
-                    <ul class="dropdown-menu text-right" aria-labelledby="paymentsDropdown">
+                    <ul class="dropdown-menu z-3 text-right" aria-labelledby="paymentsDropdown">
                         <li><a class=" bg-success dropdown-item active" aria-current="page" href="{% url 'add_payment' %}">اضافة دفعة جديدة</a></li>
                         <li><a class="dropdown-item" href="{% url 'payments_history' %}">أرشيف الدفعات</a></li>
                         <li><a class="dropdown-item" href="{% url 'unpaid_trainees' %}"> الذين لم يدفعوا</a></li>
@@ -60,7 +61,7 @@
                 {# Only admins see financial menu #}
                 {% if is_admin %}
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" id="financialDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle z-3" id="financialDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         المالية
                     </a>
                     <ul class="dropdown-menu text-right" aria-labelledby="financialDropdown">
@@ -92,7 +93,7 @@
                             {% if staff_member %}{{ staff_member.user.get_full_name|default:staff_member.user.username }}{% else %}المدير{% endif %}
                         </span>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end text-right">
+                    <ul class="dropdown-menu z-3 dropdown-menu-end text-right">
                         <li>
                             <div class="dropdown-header">
                                 <strong>{{ staff_member.role|default:"مدير" }}</strong>

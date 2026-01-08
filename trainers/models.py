@@ -465,6 +465,8 @@ class Trainer(models.Model):
         indexes = [
             models.Index(fields=['organization', 'is_active']),
             models.Index(fields=['organization', 'category']),
+            models.Index(fields=['first_name', 'last_name']),
+        
         ]
 
     @property
@@ -542,12 +544,14 @@ class Payments(models.Model):
     paymentAmount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='المبلغ')
     
     class Meta:
+        
         verbose_name = 'دفعة'
         verbose_name_plural = 'الدفعات'
         ordering = ['-paymentdate']
         indexes = [
             models.Index(fields=['organization', 'paymentdate']),
             models.Index(fields=['trainer', 'paymentCategry']),
+            
         ]
 
     def __str__(self):
@@ -684,3 +688,47 @@ class Emailed(models.Model):
     def __str__(self):
         return f"{self.user.full_name} - {self.category}"
     
+
+
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+from django.core.cache import cache
+
+@receiver([post_save, post_delete], sender=Payments)
+def invalidate_dashboard_cache(sender, instance, **kwargs):
+    """Auto-clear cache when payments change"""
+    today = timezone.now().date()
+    org_id = instance.organization_id
+    
+    cache_keys = [
+        f'financial_summary_{org_id}_{today}',
+        f'chart_data_{org_id}_{today}',
+    ]
+    cache.delete_many(cache_keys)
+
+@receiver([post_save, post_delete], sender=Payments)
+def invalidate_financial_cache(sender, instance, **kwargs):
+    """Clear financial report cache when payments change"""
+    from django.core.cache import cache
+    org_id = instance.organization_id
+    
+    # Clear all cached reports for this organization
+    # Since we don't know all date ranges, we'd need a more sophisticated approach
+    # For now, just clear dashboard caches
+    today = timezone.now().date()
+    cache_keys = [
+        f'financial_summary_{org_id}_{today}',
+        f'chart_data_{org_id}_{today}',
+    ]
+    cache.delete_many(cache_keys)
+
+@receiver([post_save, post_delete], sender=Costs)
+def invalidate_costs_cache(sender, instance, **kwargs):
+    """Clear cache when costs change"""
+    from django.core.cache import cache
+    org_id = instance.organization_id
+    today = timezone.now().date()
+    cache_keys = [
+        f'financial_summary_{org_id}_{today}',
+    ]
+    cache.delete_many(cache_keys)

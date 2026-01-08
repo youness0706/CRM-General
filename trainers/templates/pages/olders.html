@@ -1,139 +1,534 @@
 {% extends 'base/base.html' %}
 {% load static %}
-{% block title %}
-    المتدربين
-{% endblock %}
+
+{% block title %}المتدربين{% endblock %}
+
 {% block content %}
+<!-- CSRF Token -->
+{% csrf_token %}
+
 <section class="section m-2">
     <div class="container">
         
+        <!-- Trainee Count Badge -->
         <div class="col-md-4 mt-3">
-            <span id="trainee-count" class="badge bg-primary">عدد المتدربين: {{number}}</span>
+            <span id="trainee-count" class="badge bg-primary">
+                عدد المتدربين: <span id="count-number">0</span>
+            </span>
         </div>
         
+        <!-- Filters Section -->
         <div class="justify-content-center row">
             <div class="col-lg-12">
                 <div class="candidate-list-widgets mb-4">
                     <div class="g-2 row">
-                    <div class="col-lg-3">
-                        <div class="filler-job-form">
-                            <i class="uil uil-briefcase-alt"></i><input id="search-input" placeholder="اسم المتدرب" type="search" class="form-control filler-job-input-box form-control" onkeyup="filterTrainers()" />
-
+                        <!-- Search Box -->
+                        <div class="col-lg-3">
+                            <div class="filler-job-form">
+                                <i class="uil uil-briefcase-alt"></i>
+                                <input 
+                                    id="search-input" 
+                                    placeholder="اسم المتدرب" 
+                                    type="search" 
+                                    class="form-control filler-job-input-box form-control"
+                                />
+                            </div>
+                        </div>
+                        
+                        <!-- Filters Form -->
+                        <div class="col-lg-9">
+                            <div class="g-2 row">
+                                <!-- Sort Order -->
+                                <div class="col-lg-3">
+                                    <div class="selection-widget">
+                                        <select class="form-select" id="order-select">
+                                            <option value="">الترتيب</option>
+                                            <option value="first_first">الجديد أولا</option>
+                                            <option value="last_first">القديم أولا</option>
+                                            <option value="first_name">حسب الاسم</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Gender Filter -->
+                                <div class="col-lg-3">
+                                    <div class="filler-job-form">
+                                        <i class="uil uil-clipboard-notes"></i>
+                                        <select class="form-select" id="gender-select">
+                                            <option value="">الجنس</option>
+                                            <option value="male">الذكور</option>
+                                            <option value="fmale">الإناث</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="col-lg-3">
+                                    <button class="btn btn-primary" id="apply-filters">
+                                        <i class="uil uil-filter"></i> تصنيف
+                                    </button>
+                                    <a href="{% url 'export_data' 'trainers' %}" class="btn btn-success">
+                                        <i class="fa-solid fa-download"></i> تحميل
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <form class="col-lg-9">
-                        
-                        <div class="g-2 row">
-                            <div class="col-lg-3">
-                                <div class="selection-widget">
-                                    <select class="form-select" data-trigger="true" name="order" id="choices-single-filter-orderbyk" aria-label="Default select example">
-                                        <option hidden>الترتيب
-                                        </option>
-                                        <option value="first_first">الجديد أولا</option>
-                                        <option value="last_first">القديم أولا</option>
-                                        <option value="first_name">حسب الاسم</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-lg-3">
-                                <div class="filler-job-form">
-                                    <i class="uil uil-clipboard-notes"></i>
-                                    <select class="form-select selectForm__inner" data-trigger="true" name="gender" id="choices-single-categories" aria-label="Default select example">
-                                        <option value="" hidden>الجنس</option>
-                                        <option value="male">الدكور</option>
-                                        <option value="fmale">الانات</option>
-                                    </select>
-                                </div>
-
-                            </div>
-                            <div class="col-lg-3">
-                                <div>
-                                    <button class="btn btn-primary" type="submit"><i class="uil uil-filter"></i> تصنيف</button>
-                                
-                                    <a href="{% url 'export_data' 'trainers' %}" class="btn mr-2 btn-success"><i class="fa-solid fa-download"></i> تحميل</a>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-lg-12">
-                
-
-
-                <div id="trainers-list">
-                    {% for i in trainers %}
-                        <div class="candidate-list">
-                            <div class="candidate-list-box card mt-4">
-                                <div class="p-4 card-body">
-                                    <div class="align-items-center row">
-                                        <div class="col-auto">
-                                            <div class="candidate-list-images">
-                                                {% if i.image %}
-                                                <a href="#"><img src="{{i.image.url}}" alt="" class="avatar-md img-thumbnail rounded-circle" /></a>
-                                                {% else %}
-                                                <a href="#"><img src="{% static 'images/logo/loginlogo.png' %}" alt="" class="avatar-md img-thumbnail rounded-circle" /></a>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="col-lg-4">
-                                            <div class="candidate-list-content mt-3 mt-lg-0">
-                                                <h5 class="fs-19 mb-0">
-                                                    {% if i.id %}
-                                                        <a class="primary-link" href="{% url 'profile' i.id %}">{{ i.first_name }} {{ i.last_name }}</a>
-                                                    {% else %}
-                                                        {{ i.first_name }} {{ i.last_name }}
-                                                    {% endif %}
-                                                </h5>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-2">
-                                            <span class="badge bg-soft-secondary fs-14 mt-1">{{i.get_category_display}}</span>
-                                        </div>
-                                        <div class="col-lg-2">
-                                            <span class="badge bg-soft-secondary fs-14 mt-1">{{i.belt_degree}}</span>
-                                        </div>
-                                        <div class="col-lg-2">
-                                            <span class="badge bg-soft-secondary fs-14 mt-1">{{i.age}}</span>
-                                        </div>
-                                    </div>
-                                </div>
+        
+        <!-- Bulk Actions Bar -->
+        <div class="row" id="bulkActionsBar" style="display: none;">
+            <div class="col-12">
+                <div class="card bg-warning text-dark mb-3">
+                    <div class="card-body py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>تم تحديد <span id="selectedCount">0</span> متدرب</strong>
+                            </div>
+                            <div>
+                                <button class="btn btn-danger btn-sm me-2" id="bulkDeleteBtn">
+                                    <i class="fas fa-trash"></i> حذف المحددين
+                                </button>
+                                <button class="btn btn-secondary btn-sm" id="clearSelectionBtn">
+                                    إلغاء التحديد
+                                </button>
                             </div>
                         </div>
-                    {% endfor %}
+                    </div>
                 </div>
-                
-
-                
             </div>
+        </div>
+        
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">جاري التحميل...</span>
+            </div>
+            <p class="mt-3 text-muted">جاري تحميل المتدربين...</p>
+        </div>
+        
+        <!-- Trainees List Container -->
+        <div class="row">
+            <div class="col-lg-12">
+                <div id="trainers-list">
+                    <!-- Dynamic content loaded via JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pagination Container -->
+        <div id="pagination-container" class="text-center mt-4">
+            <!-- Dynamic pagination loaded via JavaScript -->
+        </div>
+    </div>
 </section>
 
+<style>
+.candidate-list {
+    transition: all 0.3s ease;
+}
+
+.candidate-list:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.trainer-checkbox {
+    width: 1.2em;
+    height: 1.2em;
+    cursor: pointer;
+}
+
+.select-all-checkbox {
+    width: 1.2em;
+    height: 1.2em;
+    cursor: pointer;
+}
+
+#bulkActionsBar {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+.loading-overlay {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.pagination {
+    margin-top: 20px;
+}
+
+.page-link {
+    color: #4e73df;
+}
+
+.page-item.active .page-link {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
+</style>
+
+<!-- Trainees List JavaScript -->
 <script>
-    function filterTrainers() {
-        // احصل على النص الذي أدخله المستخدم
-        let query = document.getElementById("search-input").value.toLowerCase();
+class TraineesManager {
+    constructor() {
+        this.selectedTrainers = new Set();
+        this.currentPage = 1;
+        this.filters = {
+            category: '{{ category }}',
+            search: '',
+            gender: '',
+            order: ''
+        };
+        this.init();
+    }
 
-        // اجلب جميع العناصر في القائمة
-        let trainers = document.querySelectorAll(".candidate-list");
+    async init() {
+        this.setupEventListeners();
+        await this.loadTrainees();
+    }
 
-        // قم بتصفية القائمة
-        trainers.forEach(trainer => {
-            // احصل على اسم المتدرب
-            let name = trainer.querySelector(".primary-link").textContent.toLowerCase();
+    setupEventListeners() {
+        // Search input with debounce
+        let searchTimeout;
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.filters.search = e.target.value;
+                this.currentPage = 1;
+                this.loadTrainees();
+            }, 500);
+        });
 
-            // تحقق مما إذا كان الاسم يتطابق مع النص المدخل
-            if (name.includes(query)) {
-                trainer.style.display = ""; // أظهر العنصر
-            } else {
-                trainer.style.display = "none"; // أخف العنصر
+        // Apply filters button
+        document.getElementById('apply-filters').addEventListener('click', () => {
+            this.filters.gender = document.getElementById('gender-select').value;
+            this.filters.order = document.getElementById('order-select').value;
+            this.currentPage = 1;
+            this.loadTrainees();
+        });
+
+        // Bulk actions
+        document.getElementById('bulkDeleteBtn').addEventListener('click', () => {
+            this.bulkDelete();
+        });
+
+        document.getElementById('clearSelectionBtn').addEventListener('click', () => {
+            this.clearSelection();
+        });
+
+        // Delegate checkbox events
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('trainer-checkbox')) {
+                this.handleCheckboxChange(e.target);
+            } else if (e.target.classList.contains('select-all-checkbox')) {
+                this.handleSelectAllChange(e.target);
             }
         });
-    };
-</script>
+    }
 
+    async loadTrainees() {
+        document.getElementById('loadingIndicator').style.display = 'block';
+        document.getElementById('trainers-list').style.display = 'none';
+
+        try {
+            const params = new URLSearchParams({
+                category: this.filters.category,
+                page: this.currentPage,
+                per_page: 50,
+                ...this.filters.search && { search: this.filters.search },
+                ...this.filters.gender && { gender: this.filters.gender },
+                ...this.filters.order && { order: this.filters.order }
+            });
+
+            const response = await fetch(`/api/trainees-list/?${params}`);
+            const data = await response.json();
+
+            this.renderTrainees(data.trainers);
+            this.renderPagination(data);
+            
+            const countEl = document.getElementById('count-number');
+            if (countEl) {
+                countEl.textContent = data.total_count;
+            }
+
+            document.getElementById('loadingIndicator').style.display = 'none';
+            document.getElementById('trainers-list').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error loading trainees:', error);
+            document.getElementById('loadingIndicator').innerHTML = `
+                <div class="alert alert-danger">
+                    حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.
+                </div>
+            `;
+        }
+    }
+
+    renderTrainees(trainers) {
+        const container = document.getElementById('trainers-list');
+        
+        if (trainers.length === 0) {
+            container.innerHTML = `
+                <div class="alert alert-info text-center">
+                    لا يوجد متدربين بالمعايير المحددة
+                </div>
+            `;
+            return;
+        }
+
+        const selectAllHtml = `
+            <div class="card mb-3 bg-light">
+                <div class="card-body py-2">
+                    <div class="form-check">
+                        <input class="form-check-input select-all-checkbox" type="checkbox" id="selectAll">
+                        <label class="form-check-label fw-bold" for="selectAll">
+                            تحديد الكل
+                        </label>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const trainersHtml = trainers.map(trainer => `
+            <div class="candidate-list" data-trainer-id="${trainer.id}">
+                <div class="candidate-list-box card mt-4">
+                    <div class="p-4 card-body">
+                        <div class="align-items-center row">
+                            <!-- Checkbox -->
+                            <div class="col-auto">
+                                <div class="form-check">
+                                    <input 
+                                        class="form-check-input trainer-checkbox" 
+                                        type="checkbox" 
+                                        value="${trainer.id}"
+                                        id="trainer${trainer.id}"
+                                    >
+                                </div>
+                            </div>
+                            
+                            <!-- Image -->
+                            <div class="col-auto">
+                                <div class="candidate-list-images">
+                                    <a href="/profile/${trainer.id}/">
+                                        <img 
+                                            src="${trainer.image_url || '{% static "images/logo/loginlogo.png" %}'}" 
+                                            alt="" 
+                                            class="avatar-md img-thumbnail rounded-circle"
+                                        />
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Name -->
+                            <div class="col-lg-4">
+                                <div class="candidate-list-content mt-3 mt-lg-0">
+                                    <h5 class="fs-19 mb-0">
+                                        <a class="primary-link" href="/profile/${trainer.id}/">
+                                            ${trainer.full_name}
+                                        </a>
+                                    </h5>
+                                </div>
+                            </div>
+                            
+                            <!-- Category -->
+                            <div class="col-lg-2">
+                                <span class="badge bg-soft-secondary fs-14 mt-1">
+                                    ${trainer.category}
+                                </span>
+                            </div>
+                            
+                            <!-- Belt -->
+                            <div class="col-lg-2">
+                                <span class="badge bg-soft-secondary fs-14 mt-1">
+                                    ${trainer.belt_degree}
+                                </span>
+                            </div>
+                            
+                            <!-- Age -->
+                            <div class="col-lg-2">
+                                <span class="badge bg-soft-secondary fs-14 mt-1">
+                                    ${trainer.age || 'N/A'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        container.innerHTML = selectAllHtml + trainersHtml;
+    }
+
+    renderPagination(data) {
+        const container = document.getElementById('pagination-container');
+        
+        if (data.total_pages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let paginationHtml = '<nav><ul class="pagination justify-content-center">';
+
+        // Previous button
+        if (data.has_previous) {
+            paginationHtml += `
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="${data.page - 1}">السابقة</a>
+                </li>
+            `;
+        }
+
+        // Page numbers
+        const startPage = Math.max(1, data.page - 2);
+        const endPage = Math.min(data.total_pages, data.page + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHtml += `
+                <li class="page-item ${i === data.page ? 'active' : ''}">
+                    <a class="page-link" href="#" data-page="${i}">${i}</a>
+                </li>
+            `;
+        }
+
+        // Next button
+        if (data.has_next) {
+            paginationHtml += `
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="${data.page + 1}">التالية</a>
+                </li>
+            `;
+        }
+
+        paginationHtml += '</ul></nav>';
+        container.innerHTML = paginationHtml;
+
+        // Add click handlers
+        container.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.currentPage = parseInt(e.target.dataset.page);
+                this.loadTrainees();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+    }
+
+    handleCheckboxChange(checkbox) {
+        if (checkbox.checked) {
+            this.selectedTrainers.add(checkbox.value);
+        } else {
+            this.selectedTrainers.delete(checkbox.value);
+        }
+        this.updateBulkActionsBar();
+    }
+
+    handleSelectAllChange(checkbox) {
+        const allCheckboxes = document.querySelectorAll('.trainer-checkbox');
+        allCheckboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+            if (checkbox.checked) {
+                this.selectedTrainers.add(cb.value);
+            } else {
+                this.selectedTrainers.delete(cb.value);
+            }
+        });
+        this.updateBulkActionsBar();
+    }
+
+    updateBulkActionsBar() {
+        const count = this.selectedTrainers.size;
+        const bar = document.getElementById('bulkActionsBar');
+        
+        if (count > 0) {
+            bar.style.display = 'block';
+            document.getElementById('selectedCount').textContent = count;
+        } else {
+            bar.style.display = 'none';
+        }
+    }
+
+    clearSelection() {
+        document.querySelectorAll('.trainer-checkbox, .select-all-checkbox').forEach(cb => {
+            cb.checked = false;
+        });
+        this.selectedTrainers.clear();
+        this.updateBulkActionsBar();
+    }
+
+    async bulkDelete() {
+        if (this.selectedTrainers.size === 0) {
+            alert('يرجى تحديد متدربين أولاً');
+            return;
+        }
+
+        if (!confirm(`هل أنت متأكد من حذف ${this.selectedTrainers.size} متدرب؟`)) {
+            return;
+        }
+
+        const btn = document.getElementById('bulkDeleteBtn');
+        btn.classList.add('loading-overlay');
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/api/bulk-delete-trainers/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCSRFToken()
+                },
+                body: JSON.stringify({
+                    trainer_ids: Array.from(this.selectedTrainers)
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert(data.message);
+                this.selectedTrainers.clear();
+                this.updateBulkActionsBar();
+                await this.loadTrainees();
+            } else {
+                alert('خطأ: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('حدث خطأ أثناء الحذف');
+        } finally {
+            btn.classList.remove('loading-overlay');
+            btn.disabled = false;
+        }
+    }
+
+    getCSRFToken() {
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        if (!cookieValue) {
+            cookieValue = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        }
+        return cookieValue;
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    new TraineesManager();
+});
+</script>
 
 {% endblock %}
