@@ -388,21 +388,32 @@ class FinancialReportManager {
                     plugins: {
                         legend: {
                             display: true,
-                            position: 'top',
-                            align: 'end',
+                            position: window.innerWidth < 640 ? 'bottom' : 'top',
+                            align: window.innerWidth < 640 ? 'center' : 'end',
                             rtl: false,
                             labels: {
                                 usePointStyle: true,
-                                padding: 15,
-                                font: { size: 12, family: 'Cairo' }
+                                padding: window.innerWidth < 640 ? 10 : 15,
+                                font: { 
+                                    size: window.innerWidth < 640 ? 10 : 12, 
+                                    family: 'Cairo' 
+                                },
+                                boxWidth: window.innerWidth < 640 ? 8 : 12,
+                                boxHeight: window.innerWidth < 640 ? 8 : 12
                             }
                         },
                         tooltip: {
                             rtl: false,
                             backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            padding: 12,
-                            titleFont: { size: 14, family: 'Cairo' },
-                            bodyFont: { size: 13, family: 'Cairo' },
+                            padding: window.innerWidth < 640 ? 8 : 12,
+                            titleFont: { 
+                                size: window.innerWidth < 640 ? 12 : 14, 
+                                family: 'Cairo' 
+                            },
+                            bodyFont: { 
+                                size: window.innerWidth < 640 ? 11 : 13, 
+                                family: 'Cairo' 
+                            },
                             callbacks: {
                                 label: (context) =>
                                     `${context.dataset.label}: ${this.formatCurrency(context.parsed.y)}`
@@ -415,14 +426,15 @@ class FinancialReportManager {
                             position: 'bottom',
                             grid: { display: false },
                             ticks: {
-                                font: { family: 'Cairo', size: 11 },
-                                maxRotation: 45,
-                                minRotation: 0,
-                                autoSkip: useDaily,
-                                maxTicksLimit: useDaily ? 10 : undefined,
-                                font: { family: 'Cairo', size: 11 },
-                                maxRotation: 0,
-                                minRotation: 0
+                                font: { 
+                                    family: 'Cairo', 
+                                    size: window.innerWidth < 640 ? 9 : 11 
+                                },
+                                maxRotation: window.innerWidth < 640 ? 45 : 0,
+                                minRotation: window.innerWidth < 640 ? 45 : 0,
+                                autoSkip: true,
+                                maxTicksLimit: window.innerWidth < 640 ? 6 : (useDaily ? 10 : 12),
+                                padding: 5
                             }
                         },
                         y: {
@@ -437,8 +449,22 @@ class FinancialReportManager {
                                 drawBorder: false
                             },
                             ticks: {
-                                callback: (value) => this.formatCurrency(value),
-                                font: { family: 'Cairo', size: 11 }
+                                callback: (value) => {
+                                    // Shorter format for mobile
+                                    if (window.innerWidth < 640) {
+                                        const num = Number(value) || 0;
+                                        if (num >= 1000) {
+                                            return `${(num / 1000).toFixed(0)}k`;
+                                        }
+                                        return num.toFixed(0);
+                                    }
+                                    return this.formatCurrency(value);
+                                },
+                                font: { 
+                                    family: 'Cairo', 
+                                    size: window.innerWidth < 640 ? 9 : 11 
+                                },
+                                maxTicksLimit: window.innerWidth < 640 ? 5 : 8
                             }
                         }
                     }
@@ -489,8 +515,37 @@ class FinancialReportManager {
             monthlyData.length > 1 &&
             monthlyData[0].year !== monthlyData[monthlyData.length - 1].year;
 
+        // Check if mobile
+        const isMobile = window.innerWidth < 640;
+        
+        // Short month names for mobile
+        const shortMonths = {
+            'يناير': 'ينا',
+            'فبراير': 'فبر',
+            'مارس': 'مار',
+            'أبريل': 'أبر',
+            'مايو': 'ماي',
+            'يونيو': 'يون',
+            'يوليو': 'يول',
+            'أغسطس': 'أغس',
+            'سبتمبر': 'سبت',
+            'أكتوبر': 'أكت',
+            'نوفمبر': 'نوف',
+            'ديسمبر': 'ديس'
+        };
+
         monthlyData.forEach(m => {
-            labels.push(multiYear ? `${m.month} ${m.year}` : m.month);
+            let label;
+            if (multiYear) {
+                // Multi-year: show month + year
+                const monthName = isMobile && shortMonths[m.month] ? shortMonths[m.month] : m.month;
+                label = `${monthName} ${m.year}`;
+            } else {
+                // Single year: just month (short on mobile)
+                label = isMobile && shortMonths[m.month] ? shortMonths[m.month] : m.month;
+            }
+            
+            labels.push(label);
             income.push(Number(m.income) || 0);
             expenses.push(Number(m.expenses) || 0);
         });

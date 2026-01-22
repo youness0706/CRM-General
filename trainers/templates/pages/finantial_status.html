@@ -3,438 +3,560 @@
 
 {% block title %}التقرير المالي{% endblock %}
 
-{% block content %}
-{% csrf_token %}
-
-<div class="container-fluid px-4 py-4">
-    <!-- Header with Period Selector -->
-    <div class="report-header mb-4">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-            <div>
-                <h1 class="report-title mb-1">التقرير المالي</h1>
-                <p class="report-subtitle mb-0" id="report-period">
-                    <i class="fas fa-calendar-alt me-2"></i>
-                    <span id="period-text">جاري التحميل...</span>
-                </p>
-            </div>
-            <div class="d-flex gap-2 flex-wrap">
-                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#periodModal">
-                    <i class="fas fa-calendar-range me-2"></i>
-                    تحديد الفترة
-                </button>
-                <button class="btn btn-success" id="exportBtn" disabled>
-                    <i class="fas fa-file-export me-2"></i>
-                    تصدير
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Date Selection Modal -->
-    <div class="modal fade" id="periodModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold">اختر الفترة الزمنية</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Quick Presets -->
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">فترات سريعة</label>
-                        <div class="btn-group w-100" role="group">
-                            <button type="button" class="btn btn-outline-secondary btn-sm quick-period" data-period="today">اليوم</button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm quick-period" data-period="week">الأسبوع</button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm quick-period" data-period="month">الشهر</button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm quick-period" data-period="year">السنة</button>
-                        </div>
-                    </div>
-                    
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <label for="start-date" class="form-label small fw-semibold">من</label>
-                            <input type="date" id="start-date" class="form-control">
-                        </div>
-                        <div class="col-6">
-                            <label for="end-date" class="form-label small fw-semibold">إلى</label>
-                            <input type="date" id="end-date" class="form-control">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-primary" id="applyDateRange">
-                        <i class="fas fa-check me-2"></i>
-                        تطبيق
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Loading State -->
-    <div id="loadingState" class="text-center py-5">
-        <div class="spinner-border text-primary mb-3" role="status">
-            <span class="visually-hidden">جاري التحميل...</span>
-        </div>
-        <p class="text-muted">جاري تحميل التقرير المالي...</p>
-    </div>
-
-    <!-- Main Content -->
-    <div id="reportContent" style="display: none;">
-        <!-- Summary Cards -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <div class="summary-card income-card">
-                    <div class="card-icon-wrapper">
-                        <div class="card-icon income">
-                            <i class="fas fa-arrow-up"></i>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <p class="card-label">إجمالي الإيرادات</p>
-                        <h2 class="card-value" id="total-income">0 د.م</h2>
-                        <p class="card-change" id="income-change"></p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4">
-                <div class="summary-card expense-card">
-                    <div class="card-icon-wrapper">
-                        <div class="card-icon expense">
-                            <i class="fas fa-arrow-down"></i>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <p class="card-label">إجمالي المصروفات</p>
-                        <h2 class="card-value" id="total-expenses">0 د.م</h2>
-                        <p class="card-change" id="expense-change"></p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4">
-                <div class="summary-card profit-card">
-                    <div class="card-icon-wrapper">
-                        <div class="card-icon profit">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <p class="card-label">صافي الربح</p>
-                        <h2 class="card-value" id="net-profit">0 د.م</h2>
-                        <p class="card-change" id="profit-change"></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Chart Section -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white border-0 py-3">
-                        <h6 class="mb-0 fw-semibold">الإيرادات مقابل المصروفات</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-wrapper">
-                            <canvas id="financialChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Breakdown Tables -->
-        <div class="row g-3">
-            <!-- Income Details -->
-            <div class="col-lg-6">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white border-0 py-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 fw-semibold">
-                                <i class="fas fa-plus-circle text-success me-2"></i>
-                                تفاصيل الإيرادات
-                            </h6>
-                            <button class="btn btn-sm btn-outline-secondary toggle-section" data-target="incomeDetails">
-                                <i class="fas fa-chevron-up"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body p-0 collapse-section" id="incomeDetails">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>المصدر</th>
-                                        <th class="text-end">العدد</th>
-                                        <th class="text-end">المبلغ</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="income-tbody">
-                                    <!-- Dynamic content -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Expense Details -->
-            <div class="col-lg-6">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white border-0 py-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 fw-semibold">
-                                <i class="fas fa-minus-circle text-danger me-2"></i>
-                                تفاصيل المصروفات
-                            </h6>
-                            <button class="btn btn-sm btn-outline-secondary toggle-section" data-target="expenseDetails">
-                                <i class="fas fa-chevron-up"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body p-0 collapse-section" id="expenseDetails">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>البند</th>
-                                        <th class="text-end">العدد</th>
-                                        <th class="text-end">المبلغ</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="expenses-tbody">
-                                    <!-- Dynamic content -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
+{% block extra_css %}
 <style>
 :root {
     --income-color: #10b981;
+    --income-light: #d1fae5;
     --expense-color: #ef4444;
+    --expense-light: #fee2e2;
     --profit-color: #3b82f6;
+    --profit-light: #dbeafe;
     --gray-50: #f9fafb;
     --gray-100: #f3f4f6;
     --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-500: #6b7280;
     --gray-600: #4b5563;
+    --gray-700: #374151;
     --gray-900: #111827;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+* {
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
     background-color: var(--gray-50);
 }
 
-/* Header Styling */
+/* Container */
+.financial-container {
+    max-width: 100%;
+    padding: 0.875rem;
+}
+
+/* Header */
 .report-header {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.25rem;
+    border-radius: 16px;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 1rem;
+    color: white;
 }
 
 .report-title {
-    font-size: 1.75rem;
+    font-size: 1.375rem;
     font-weight: 700;
-    color: var(--gray-900);
+    margin-bottom: 0.5rem;
+    text-align: center;
 }
 
-.report-subtitle {
-    color: var(--gray-600);
-    font-size: 0.95rem;
+.report-period {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    opacity: 0.95;
+    margin-bottom: 1rem;
 }
 
-/* Summary Cards */
+.period-icon {
+    font-size: 0.875rem;
+}
+
+/* Action Buttons */
+.action-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    cursor: pointer;
+    min-height: 44px;
+}
+
+.action-btn:active {
+    transform: scale(0.97);
+}
+
+.action-btn-outline {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    backdrop-filter: blur(10px);
+}
+
+.action-btn-solid {
+    background: white;
+    color: #667eea;
+}
+
+.action-btn-solid:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Summary Cards - Redesigned */
+.summary-grid {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
 .summary-card {
     background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-    display: flex;
-    gap: 1rem;
-    transition: all 0.2s ease;
+    border-radius: 16px;
+    padding: 1.125rem;
+    box-shadow: var(--shadow);
     position: relative;
     overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.summary-card:active {
+    transform: translateY(2px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Colored top border */
 .summary-card::before {
     content: '';
     position: absolute;
     top: 0;
+    left: 0;
     right: 0;
-    width: 4px;
-    height: 100%;
-    transition: width 0.3s ease;
+    height: 4px;
 }
 
-.summary-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+.income-card::before {
+    background: linear-gradient(90deg, var(--income-color), #059669);
 }
 
-.summary-card:hover::before {
-    width: 8px;
+.expense-card::before {
+    background: linear-gradient(90deg, var(--expense-color), #dc2626);
 }
 
-.income-card::before { background: var(--income-color); }
-.expense-card::before { background: var(--expense-color); }
-.profit-card::before { background: var(--profit-color); }
-
-.card-icon-wrapper {
-    flex-shrink: 0;
+.profit-card::before {
+    background: linear-gradient(90deg, var(--profit-color), #2563eb);
 }
 
-.card-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
+.card-header-row {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 0.875rem;
 }
 
-.card-icon.income {
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--income-color);
-}
-
-.card-icon.expense {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--expense-color);
-}
-
-.card-icon.profit {
-    background: rgba(59, 130, 246, 0.1);
-    color: var(--profit-color);
-}
-
-.card-content {
+.card-label-wrapper {
     flex: 1;
 }
 
 .card-label {
-    font-size: 0.875rem;
-    color: var(--gray-600);
-    margin-bottom: 0.5rem;
-    font-weight: 500;
+    font-size: 0.75rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.025em;
+    letter-spacing: 0.5px;
+    color: var(--gray-500);
+    margin-bottom: 0.25rem;
+}
+
+.card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.card-icon.income {
+    background: var(--income-light);
+    color: var(--income-color);
+}
+
+.card-icon.expense {
+    background: var(--expense-light);
+    color: var(--expense-color);
+}
+
+.card-icon.profit {
+    background: var(--profit-light);
+    color: var(--profit-color);
 }
 
 .card-value {
-    font-size: 2rem;
+    font-size: 1.625rem;
     font-weight: 700;
     color: var(--gray-900);
     margin: 0;
     line-height: 1.2;
+    letter-spacing: -0.02em;
 }
 
 .card-change {
-    font-size: 0.875rem;
-    margin: 0.5rem 0 0 0;
-    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.625rem;
 }
 
 .card-change.positive {
-    color: var(--income-color);
+    background: var(--income-light);
+    color: #065f46;
 }
 
 .card-change.negative {
-    color: var(--expense-color);
+    background: var(--expense-light);
+    color: #991b1b;
 }
 
-/* Chart Styling */
-.chart-wrapper {
-    position: relative;
-    height: 400px;
-}
-
-@media (max-width: 768px) {
-    .chart-wrapper {
-        height: 300px;
-    }
-}
-
-/* Table Styling */
-.table {
-    font-size: 0.9rem;
-}
-
-.table thead th {
-    font-weight: 600;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--gray-600);
-    border-bottom: 2px solid var(--gray-200);
-    padding: 0.75rem 1rem;
-}
-
-.table tbody td {
-    padding: 0.875rem 1rem;
-    vertical-align: middle;
-}
-
-.table tbody tr {
-    transition: background-color 0.15s ease;
-}
-
-.table tbody tr:hover {
-    background-color: var(--gray-50);
-}
-
-/* Section Toggle */
-.toggle-section {
-    transition: transform 0.3s ease;
-}
-
-.toggle-section.collapsed {
-    transform: rotate(180deg);
-}
-
-.collapse-section {
-    transition: max-height 0.3s ease;
-    max-height: 1000px;
-    overflow: hidden;
-}
-
-.collapse-section.collapsed {
-    max-height: 0;
-}
-
-/* Modal Styling */
-.modal-content {
-    border-radius: 12px;
-}
-
-.quick-period {
+.change-icon {
     font-size: 0.875rem;
 }
 
-/* Loading Animation */
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
+/* Chart Section */
+.chart-section {
+    background: white;
+    border-radius: 16px;
+    padding: 1.125rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 1rem;
 }
 
-#loadingState {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--gray-100);
+}
+
+.section-title {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0;
+}
+
+.section-icon {
+    color: var(--profit-color);
+    font-size: 1.125rem;
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 260px;
+}
+
+/* Collapsible Tables */
+.table-section {
+    background: white;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+}
+
+.table-header {
+    padding: 1rem 1.125rem;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.2s;
+}
+
+.table-header:active {
+    background: var(--gray-50);
+}
+
+.table-header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    flex: 1;
+}
+
+.table-title {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0;
+}
+
+.table-icon {
+    font-size: 1.125rem;
+}
+
+.table-icon.income-icon {
+    color: var(--income-color);
+}
+
+.table-icon.expense-icon {
+    color: var(--expense-color);
+}
+
+.toggle-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--gray-100);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    color: var(--gray-600);
+    flex-shrink: 0;
+}
+
+.toggle-btn:active {
+    background: var(--gray-200);
+}
+
+.toggle-btn.collapsed {
+    transform: rotate(180deg);
+}
+
+.table-content {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 2000px;
+    opacity: 1;
+    overflow: hidden;
+}
+
+.table-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+}
+
+/* Table Styling */
+.data-table {
+    width: 100%;
+    font-size: 0.8125rem;
+}
+
+.data-table thead {
+    background: var(--gray-50);
+}
+
+.data-table thead th {
+    padding: 0.75rem 1.125rem;
+    font-weight: 700;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gray-600);
+    border-bottom: 2px solid var(--gray-200);
+    white-space: nowrap;
+}
+
+.data-table tbody td {
+    padding: 0.875rem 1.125rem;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-700);
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tbody tr {
+    transition: background 0.15s;
+}
+
+.data-table tbody tr:active {
+    background: var(--gray-50);
+}
+
+.data-table .text-end {
+    text-align: end;
+}
+
+.data-table strong {
+    color: var(--gray-900);
+    font-weight: 700;
+}
+
+.data-table .small {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-top: 0.25rem;
+}
+
+/* Modal */
+.modal-content {
+    border-radius: 20px;
+    border: none;
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--gray-200);
+    background: var(--gray-50);
+}
+
+.modal-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.modal-body {
+    padding: 1.25rem;
+}
+
+.modal-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--gray-200);
+    background: var(--gray-50);
+}
+
+/* Quick Period Buttons */
+.quick-periods {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.period-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+}
+
+.quick-period-btn {
+    padding: 0.75rem;
+    border: 2px solid var(--gray-200);
+    border-radius: 12px;
+    background: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    transition: all 0.2s;
+    cursor: pointer;
+    min-height: 44px;
+}
+
+.quick-period-btn:active {
+    background: var(--gray-50);
+    border-color: var(--profit-color);
+    color: var(--profit-color);
+}
+
+/* Date Inputs */
+.date-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.form-group {
+    margin-bottom: 0;
+}
+
+.form-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.form-control {
+    padding: 0.75rem;
+    border: 2px solid var(--gray-200);
+    border-radius: 12px;
+    font-size: 0.875rem;
+    width: 100%;
+    transition: all 0.2s;
+    min-height: 44px;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--profit-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Apply Button */
+.apply-btn {
+    width: 100%;
+    padding: 0.875rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    cursor: pointer;
+    min-height: 48px;
+}
+
+.apply-btn:active {
+    transform: scale(0.98);
+}
+
+/* Loading State */
+.loading-state {
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--gray-200);
+    border-top-color: var(--profit-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    color: var(--gray-600);
+    font-size: 0.9375rem;
 }
 
 /* Animations */
-@keyframes slideInUp {
+@keyframes fadeInUp {
     from {
         opacity: 0;
         transform: translateY(20px);
@@ -445,37 +567,363 @@ body {
     }
 }
 
-.summary-card, .card {
-    animation: slideInUp 0.4s ease;
+.fade-in {
+    animation: fadeInUp 0.4s ease;
 }
 
-.summary-card:nth-child(2) {
-    animation-delay: 0.1s;
+.fade-in-delay-1 {
+    animation: fadeInUp 0.4s ease 0.1s both;
 }
 
-.summary-card:nth-child(3) {
-    animation-delay: 0.2s;
+.fade-in-delay-2 {
+    animation: fadeInUp 0.4s ease 0.2s both;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .report-title {
-        font-size: 1.5rem;
+/* Tablet Improvements */
+@media (min-width: 640px) {
+    .financial-container {
+        padding: 1.25rem;
+    }
+    
+    .summary-grid {
+        grid-template-columns: repeat(3, 1fr);
     }
     
     .card-value {
-        font-size: 1.5rem;
+        font-size: 1.875rem;
+    }
+    
+    .chart-wrapper {
+        height: 320px;
+    }
+    
+    .quick-periods {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+    .financial-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .report-title {
+        font-size: 1.75rem;
+    }
+    
+    .card-value {
+        font-size: 2rem;
+    }
+    
+    .chart-wrapper {
+        height: 400px;
+    }
+    
+    .tables-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+}
+
+/* Small Devices */
+@media (max-width: 374px) {
+    .financial-container {
+        padding: 0.75rem;
+    }
+    
+    .report-title {
+        font-size: 1.25rem;
+    }
+    
+    .card-value {
+        font-size: 1.375rem;
     }
     
     .card-icon {
-        width: 48px;
-        height: 48px;
-        font-size: 20px;
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+    
+    .chart-wrapper {
+        height: 220px;
+    }
+    
+    .data-table {
+        font-size: 0.75rem;
+    }
+    
+    .data-table thead th,
+    .data-table tbody td {
+        padding: 0.625rem 0.75rem;
+    }
+}
+
+/* Landscape Mode */
+@media (max-height: 500px) and (orientation: landscape) {
+    .chart-wrapper {
+        height: 200px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .action-group,
+    .toggle-btn {
+        display: none !important;
+    }
+    
+    .table-content {
+        max-height: none !important;
+        opacity: 1 !important;
+    }
+    
+    .summary-card {
+        break-inside: avoid;
     }
 }
 </style>
+{% endblock %}
 
+{% block content %}
+<div class="financial-container">
+    <!-- Header -->
+    <div class="report-header fade-in">
+        <h1 class="report-title">التقرير المالي</h1>
+        <div class="report-period" id="report-period">
+            <i class="fas fa-calendar-alt period-icon"></i>
+            <span id="period-text">جاري التحميل...</span>
+        </div>
+        <div class="action-group">
+            <button class="action-btn action-btn-outline" data-bs-toggle="modal" data-bs-target="#periodModal">
+                <i class="fas fa-calendar-range"></i>
+                <span>تحديد الفترة</span>
+            </button>
+            <button class="action-btn action-btn-solid" id="exportBtn" disabled>
+                <i class="fas fa-file-export"></i>
+                <span>تصدير</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Period Selection Modal -->
+    <div class="modal fade" id="periodModal" tabindex="-1" aria-labelledby="periodModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="periodModalLabel">اختر الفترة الزمنية</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="period-label">فترات سريعة</label>
+                    <div class="quick-periods">
+                        <button class="quick-period-btn" data-period="today">اليوم</button>
+                        <button class="quick-period-btn" data-period="week">الأسبوع</button>
+                        <button class="quick-period-btn" data-period="month">الشهر</button>
+                        <button class="quick-period-btn" data-period="year">السنة</button>
+                    </div>
+                    
+                    <div class="date-row">
+                        <div class="form-group">
+                            <label for="start-date" class="form-label">من</label>
+                            <input type="date" id="start-date" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="end-date" class="form-label">إلى</label>
+                            <input type="date" id="end-date" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="apply-btn" id="applyDateRange">
+                        <i class="fas fa-check"></i>
+                        <span>تطبيق</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="loading-state">
+        <div class="spinner"></div>
+        <p class="loading-text">جاري تحميل التقرير المالي...</p>
+    </div>
+
+    <!-- Main Content -->
+    <div id="reportContent" style="display: none;">
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <div class="summary-card income-card fade-in">
+                <div class="card-header-row">
+                    <div class="card-label-wrapper">
+                        <p class="card-label">إجمالي الإيرادات</p>
+                    </div>
+                    <div class="card-icon income">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                </div>
+                <h2 class="card-value" id="total-income">0 د.م</h2>
+                <div class="card-change positive" id="income-change" style="display: none;">
+                    <i class="fas fa-arrow-up change-icon"></i>
+                    <span>0%</span>
+                </div>
+            </div>
+            
+            <div class="summary-card expense-card fade-in-delay-1">
+                <div class="card-header-row">
+                    <div class="card-label-wrapper">
+                        <p class="card-label">إجمالي المصروفات</p>
+                    </div>
+                    <div class="card-icon expense">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                </div>
+                <h2 class="card-value" id="total-expenses">0 د.م</h2>
+                <div class="card-change negative" id="expense-change" style="display: none;">
+                    <i class="fas fa-arrow-down change-icon"></i>
+                    <span>0%</span>
+                </div>
+            </div>
+            
+            <div class="summary-card profit-card fade-in-delay-2">
+                <div class="card-header-row">
+                    <div class="card-label-wrapper">
+                        <p class="card-label">صافي الربح</p>
+                    </div>
+                    <div class="card-icon profit">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+                <h2 class="card-value" id="net-profit">0 د.م</h2>
+                <div class="card-change positive" id="profit-change" style="display: none;">
+                    <i class="fas fa-arrow-up change-icon"></i>
+                    <span>0%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="chart-section">
+            <div class="section-header">
+                <i class="fas fa-chart-area section-icon"></i>
+                <h6 class="section-title">الإيرادات مقابل المصروفات</h6>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="financialChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Tables -->
+        <div class="tables-grid">
+            <!-- Income Table -->
+            <div class="table-section">
+                <div class="table-header" onclick="toggleTable('incomeTable')">
+                    <div class="table-header-title">
+                        <i class="fas fa-plus-circle table-icon income-icon"></i>
+                        <h6 class="table-title">تفاصيل الإيرادات</h6>
+                    </div>
+                    <button class="toggle-btn" id="incomeToggle">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                </div>
+                <div class="table-content" id="incomeTable">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>المصدر</th>
+                                <th class="text-end">العدد</th>
+                                <th class="text-end">المبلغ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="income-tbody">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Expense Table -->
+            <div class="table-section">
+                <div class="table-header" onclick="toggleTable('expenseTable')">
+                    <div class="table-header-title">
+                        <i class="fas fa-minus-circle table-icon expense-icon"></i>
+                        <h6 class="table-title">تفاصيل المصروفات</h6>
+                    </div>
+                    <button class="toggle-btn" id="expenseToggle">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                </div>
+                <div class="table-content" id="expenseTable">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>البند</th>
+                                <th class="text-end">العدد</th>
+                                <th class="text-end">المبلغ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenses-tbody">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block chart_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block extra_js %}
 <script src="{% static 'js/financial_report.js' %}"></script>
 
+<script>
+// Table toggle function
+function toggleTable(tableId) {
+    const table = document.getElementById(tableId);
+    const toggleId = tableId === 'incomeTable' ? 'incomeToggle' : 'expenseToggle';
+    const toggle = document.getElementById(toggleId);
+    
+    if (table && toggle) {
+        table.classList.toggle('collapsed');
+        toggle.classList.toggle('collapsed');
+    }
+}
+
+// Prevent button click from triggering header click
+document.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+});
+
+// Add click handlers to quick period buttons
+document.querySelectorAll('.quick-period-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        // Remove active state from all buttons
+        document.querySelectorAll('.quick-period-btn').forEach(b => {
+            b.style.borderColor = 'var(--gray-200)';
+            b.style.color = 'var(--gray-700)';
+        });
+        
+        // Add active state to clicked button
+        this.style.borderColor = 'var(--profit-color)';
+        this.style.color = 'var(--profit-color)';
+        
+        // Trigger the period change
+        const period = this.getAttribute('data-period');
+        if (window.financialReport) {
+            window.financialReport.setQuickPeriod(period);
+        }
+    });
+});
+</script>
 {% endblock %}
