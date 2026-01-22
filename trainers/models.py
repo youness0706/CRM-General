@@ -1,4 +1,5 @@
 from django.db import models
+from django.forms import ValidationError
 from django.utils import timezone
 from django.contrib.auth.models import User
 from ckeditor.fields import RichTextField
@@ -7,6 +8,8 @@ from django.utils.text import slugify
 import os
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
+from django.core.validators import FileExtensionValidator
+
 
 
 
@@ -199,6 +202,7 @@ class OrganizationInfo(models.Model):
             if self.subscription_end and today > self.subscription_end:
                 self.subscription_status = 'expired'
                 self.save()
+    
     def days_until_expiration(self):
         """Calculate days remaining until subscription expires"""
         if not self.subscription_end_date:
@@ -222,7 +226,7 @@ class OrganizationInfo(models.Model):
             return False
         return days_left < -self.grace_period_days
 
-    def subscription_status(self):
+    def get_subscription_status_display(self):
         """Get human-readable subscription status with color coding"""
         days_left = self.days_until_expiration()
         
@@ -456,7 +460,12 @@ class Trainer(models.Model):
     weight = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name='الوزن')
     started_day = models.DateField(default=timezone.now, verbose_name='تاريخ البدء')
     is_active = models.BooleanField(default=True, verbose_name='نشط')
-    image = models.ImageField(upload_to=image_upload_to, blank=True, verbose_name='الصورة')
+    image = models.ImageField(
+        upload_to=image_upload_to,
+        blank=True,
+        verbose_name='الصورة',
+        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])]
+        )   
 
     class Meta:
         verbose_name = 'متدرب'
@@ -489,7 +498,15 @@ class Trainer(models.Model):
     @staticmethod
     def get_belt_choices():
         return Trainer.belts
-
+def document_upload_to(instance, filename):
+    return (
+        f"organizations/{instance.trainer.organization.slug}/"
+        f"trainees/documents/{instance.trainer.id}/{filename}"
+    )
+def validate_file_size(value):
+    max_size = 5 * 1024 * 1024  # 5MB
+    if value.size > max_size:
+        raise ValidationError("الملف كبير جداً (الحد الأقصى 5MB)")
 class TrainerDocument(models.Model):
     DOC_TYPES = (
         ('بطاقة الوطنية', 'بطاقة الوطنية'),
@@ -509,8 +526,9 @@ class TrainerDocument(models.Model):
         verbose_name='نوع الوثيقة'
     )
     file = models.FileField(
-        upload_to='organizations/{instance.organization.slug}/trainees/documents/',
-        verbose_name='الملف'
+    upload_to=document_upload_to,
+    validators=[validate_file_size],
+    verbose_name='الملف'
     )
     uploaded_at = models.DateTimeField(
         auto_now_add=True,

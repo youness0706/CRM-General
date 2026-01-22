@@ -89,6 +89,7 @@
                     <th scope="col">المبلغ</th>
                     <th scope="col">التاريخ</th>
                     <th scope="col">إجراءات</th>
+                    <th scope="col">فاتورة</th>
                 </tr>
             </thead>
             <tbody id="payments-tbody">
@@ -280,6 +281,11 @@ class PaymentsManager {
                     >
                         <i class="fa-solid fa-trash"></i> حذف
                     </button>
+                </td>
+                <td>
+                    <a href="/payment/${payment.id}/invoice/" class="btn btn-success">
+                        <i class="fa-solid fa-file-pdf"></i> تحميل الفاتورة
+                    </a>
                 </td>
             </tr>
         `).join('');

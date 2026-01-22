@@ -1,11 +1,10 @@
 from django.urls import path,include
 from . import views
-from . import payments_urls,index_urls,trainees_urls
-
+from . import index_urls,trainees_urls
+from .payments import payments_urls
 urlpatterns = [ 
     #Trainees
     
-    path('profile/<int:id>', views.trainee_profile, name='profile'),
     path('add_trainee', views.add_trainee, name='add_trainee'),
     path('register/<slug:org_slug>/', views.addme, name='addme'),
     path('register/<slug:org_slug>/done/', views.addmedone, name='done'),
@@ -54,8 +53,7 @@ urlpatterns = [
     path('trainees_report/', views.download_documents, name='trainees_report'),
     path("export-xls/", views.export_xls, name="export_xls"),
     # Add this new URL pattern for bulk deactivation
-    path('bulk-deactivate-trainers/', views.bulk_deactivate_trainers, name='bulk_deactivate_trainers'),
-
+ 
     path('setup_organization/', views.signup, name='setup_organization'),
     path('api/check-username/', views.check_username, name='check_username'),
     path('api/check-slug/', views.check_slug, name='check_slug'),

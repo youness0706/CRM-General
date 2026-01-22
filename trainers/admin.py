@@ -279,7 +279,7 @@ class OrganizationInfoAdmin(admin.ModelAdmin):
     actions = ['activate_organizations', 'deactivate_organizations', 'check_expiration']
     
     def subscription_status_display(self, obj):
-        status = obj.subscription_status()
+        status = obj.get_subscription_status_display()
         colors = {
             'success': '#28a745',
             'info': '#17a2b8',

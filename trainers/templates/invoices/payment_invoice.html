@@ -1,0 +1,519 @@
+<!-- templates/invoices/payment_invoice.html -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فاتورة دفع - {{ invoice_number }}</title>
+    <style>
+        /* ===================== RESET & BASE ===================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            font-size: 11pt;
+            line-height: 1.6;
+            color: #333;
+            direction: rtl;
+        }
+
+        /* ===================== LAYOUT ===================== */
+        .invoice-container {
+            width: 100%;
+            max-width: 21cm;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+        }
+
+        /* ===================== HEADER ===================== */
+        .invoice-header {
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .company-info {
+            flex: 1;
+        }
+
+        .company-name {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .company-details {
+            font-size: 10pt;
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .invoice-title-section {
+            text-align: left;
+            padding-right: 20px;
+        }
+
+        .invoice-title {
+            font-size: 28pt;
+            font-weight: bold;
+            color: #e74c3c;
+            margin-bottom: 5px;
+        }
+
+        .invoice-subtitle {
+            font-size: 10pt;
+            color: #666;
+            font-style: italic;
+        }
+
+        .invoice-meta {
+            display: flex;
+            justify-content: space-between;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-label {
+            font-size: 9pt;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        .meta-value {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        /* ===================== PARTIES SECTION ===================== */
+        .parties-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            gap: 30px;
+        }
+
+        .party-box {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            background: #fafafa;
+        }
+
+        .party-title {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .party-details {
+            font-size: 10pt;
+            line-height: 2;
+        }
+
+        .party-details strong {
+            color: #555;
+            display: inline-block;
+            width: 80px;
+        }
+
+        /* ===================== PAYMENT DETAILS ===================== */
+        .payment-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .payment-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .payment-table th {
+            background: #34495e;
+            color: #fff;
+            padding: 12px;
+            text-align: right;
+            font-weight: bold;
+            font-size: 11pt;
+        }
+
+        .payment-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: right;
+        }
+
+        .payment-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .payment-table .amount-cell {
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        /* ===================== TOTALS SECTION ===================== */
+        .totals-section {
+            margin-top: 30px;
+            margin-right: auto;
+            width: 50%;
+            min-width: 300px;
+        }
+
+        .totals-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .totals-table tr {
+            border-bottom: 1px solid #eee;
+        }
+
+        .totals-table td {
+            padding: 10px 15px;
+            font-size: 11pt;
+        }
+
+        .totals-table td:first-child {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .totals-table td:last-child {
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .totals-table .total-row {
+            background: #2c3e50;
+            color: #fff;
+            font-size: 13pt;
+        }
+
+        .totals-table .total-row td {
+            padding: 15px;
+        }
+
+        .tax-row {
+            font-size: 10pt;
+            color: #666;
+        }
+
+        /* ===================== AMOUNT IN WORDS ===================== */
+        .amount-words {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-right: 4px solid #3498db;
+        }
+
+        .amount-words-label {
+            font-size: 10pt;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .amount-words-value {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        /* ===================== FOOTER ===================== */
+        .invoice-footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+        }
+
+        .footer-notes {
+            background: #fff9e6;
+            padding: 15px;
+            border-radius: 5px;
+            border-right: 4px solid #f39c12;
+            margin-bottom: 20px;
+        }
+
+        .footer-notes-title {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #d68910;
+            margin-bottom: 8px;
+        }
+
+        .footer-notes-text {
+            font-size: 9pt;
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .footer-meta {
+            text-align: center;
+            font-size: 8pt;
+            color: #999;
+            margin-top: 20px;
+        }
+
+        .signature-section {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signature-box {
+            width: 40%;
+            text-align: center;
+        }
+
+        .signature-line {
+            border-top: 1px solid #333;
+            margin-top: 60px;
+            padding-top: 8px;
+            font-size: 10pt;
+            color: #666;
+        }
+
+        /* ===================== UTILITIES ===================== */
+        .text-center {
+            text-align: center;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .mb-10 {
+            margin-bottom: 10px;
+        }
+
+        .mb-20 {
+            margin-bottom: 20px;
+        }
+
+        .color-primary {
+            color: #3498db;
+        }
+
+        .color-success {
+            color: #27ae60;
+        }
+
+        .color-danger {
+            color: #e74c3c;
+        }
+
+        /* ===================== PRINT OPTIMIZATION ===================== */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            .invoice-container {
+                margin: 0;
+                padding: 0;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- ===================== HEADER ===================== -->
+        <div class="invoice-header">
+            <div class="header-top">
+                <div class="company-info">
+                    <div class="company-name">{{ org_name }}</div>
+                    <div class="company-details">
+                        {% if org_location %}
+                            📍 {{ org_location }}<br>
+                        {% endif %}
+                        {% if org_phone %}
+                            📞 {{ org_phone }}<br>
+                        {% endif %}
+                        {% if org_email %}
+                            ✉️ {{ org_email }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="invoice-title-section">
+                    <div class="invoice-title">فاتورة</div>
+                    <div class="invoice-subtitle">إيصال دفع</div>
+                </div>
+            </div>
+
+            <div class="invoice-meta">
+                <div class="meta-item">
+                    <span class="meta-label">رقم الفاتورة</span>
+                    <span class="meta-value">{{ invoice_number }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">تاريخ الإصدار</span>
+                    <span class="meta-value">{{ invoice_date|date:"Y/m/d" }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">تاريخ الدفع</span>
+                    <span class="meta-value">{{ payment_date|date:"Y/m/d" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== PARTIES ===================== -->
+        <div class="parties-section">
+            <div class="party-box">
+                <div class="party-title">📋 معلومات العميل</div>
+                <div class="party-details">
+                    <strong>الاسم:</strong> {{ client_name }}<br>
+                    {% if client_cin %}
+                        <strong>البطاقة:</strong> {{ client_cin }}<br>
+                    {% endif %}
+                    {% if client_phone %}
+                        <strong>الهاتف:</strong> {{ client_phone }}<br>
+                    {% endif %}
+                    {% if client_email %}
+                        <strong>البريد:</strong> {{ client_email }}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="party-box">
+                <div class="party-title">🏢 معلومات الجمعية</div>
+                <div class="party-details">
+                    <strong>الاسم:</strong> {{ org_name }}<br>
+                    {% if org_location %}
+                        <strong>العنوان:</strong> {{ org_location }}<br>
+                    {% endif %}
+                    {% if org_phone %}
+                        <strong>الهاتف:</strong> {{ org_phone }}<br>
+                    {% endif %}
+                    {% if org_email %}
+                        <strong>البريد:</strong> {{ org_email }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== PAYMENT DETAILS ===================== -->
+        <div class="payment-section">
+            <div class="section-title">📝 تفاصيل الدفع</div>
+            
+            <table class="payment-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60%;">الوصف</th>
+                        <th style="width: 20%;">التاريخ</th>
+                        <th style="width: 20%;">المبلغ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ payment_description }}</td>
+                        <td>{{ payment_date|date:"Y/m/d" }}</td>
+                        <td class="amount-cell">{{ format_currency|safe }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ===================== TOTALS ===================== -->
+        <div class="totals-section">
+            <table class="totals-table">
+                <tr>
+                    <td>المجموع الفرعي:</td>
+                    <td>{{ subtotal|floatformat:2 }} {{ currency }}</td>
+                </tr>
+                {% if tax_amount > 0 %}
+                <tr class="tax-row">
+                    <td>الضريبة ({{ tax_rate|floatformat:0 }}%):</td>
+                    <td>{{ tax_amount|floatformat:2 }} {{ currency }}</td>
+                </tr>
+                {% endif %}
+                <tr class="total-row">
+                    <td>المجموع الإجمالي:</td>
+                    <td>{{ total|floatformat:2 }} {{ currency }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- ===================== FOOTER NOTES ===================== -->
+        <div class="invoice-footer">
+            <div class="footer-notes">
+                <div class="footer-notes-title">⚠️ ملاحظات هامة</div>
+                <div class="footer-notes-text">
+                    • هذه الوثيقة عبارة عن إيصال دفع تم إنشاؤه إلكترونياً.<br>
+                    • يُرجى الاحتفاظ بهذا الإيصال كإثبات للدفع.<br>
+                    • لأي استفسارات، يُرجى التواصل مع الجمعية.<br>
+                    {% if tax_rate == 0 %}
+                    • المبلغ لا يشمل ضريبة القيمة المضافة (TVA).
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- ===================== SIGNATURES ===================== -->
+            <div class="signature-section">
+                <div class="signature-box">
+                    <div class="signature-line">
+                        توقيع المسؤول
+                    </div>
+                </div>
+                <div class="signature-box">
+                    <div class="signature-line">
+                        توقيع العميل
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================== FOOTER META ===================== -->
+            <div class="footer-meta">
+                تم إنشاء هذه الفاتورة بتاريخ {{ generated_date|date:"Y/m/d H:i" }}<br>
+                {{ org_name }} - جميع الحقوق محفوظة © {{ generated_date|date:"Y" }}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

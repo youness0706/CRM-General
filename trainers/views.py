@@ -25,44 +25,6 @@ def landing_page(request):
     return render(request, "pages/landing_page.html")
 
 
-@csrf_exempt
-@require_POST
-@require_organization
-def bulk_deactivate_trainers(request):
-    organization = request.organization
-    staff = Staff.objects.get(user=request.user)
-    """
-    View to handle bulk deactivation of trainers
-    """
-    if not staff.is_admin:
-        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
-    
-    try:
-        data = json.loads(request.body)
-        trainer_ids = data.get('trainer_ids', [])
-        
-        if not trainer_ids:
-            return JsonResponse({'success': False, 'error': 'No trainers selected'})
-        
-        # Update trainers to inactive
-        updated_count = Trainer.objects.filter(
-            id__in=trainer_ids,
-            is_active=True,
-             organization=organization
-        ).update(is_active=False)
-        
-        return JsonResponse({
-            'success': True, 
-            'message': f'تم إلغاء تفعيل {updated_count} متدرب بنجاح',
-            'deactivated_count': updated_count
-        })
-        
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-
 
 """
 def Home(request):
@@ -890,7 +852,7 @@ def subscription_status_view(request):
     
     # Get subscription details
     days_left = organization.days_until_expiration()
-    subscription_status = organization.subscription_status()
+    subscription_status = organization.get_subscription_status_display()
     
     # Get payment history
     recent_payments = []
@@ -988,7 +950,7 @@ def subscription_renew_view(request):
     
     context = {
         'organization': organization,
-        'subscription_status': organization.subscription_status(),
+        'subscription_status': organization.get_subscription_status_display(),
         'pricing': pricing,
     }
     
@@ -1036,7 +998,7 @@ def subscription_status_api(request):
     organization = request.organization
     
     days_left = organization.days_until_expiration()
-    status = organization.subscription_status()
+    status = organization.get_subscription_status_display()
     
     return JsonResponse({
         'organization': organization.name,
@@ -2095,6 +2057,7 @@ def setup_organization(request):
                 phone_number=phone,
                 is_active=True,
                 subscription_tier='free',
+                subscription_status='trial',
                 max_trainers=50
             )
             

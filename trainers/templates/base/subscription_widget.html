@@ -1,73 +1,139 @@
-<!-- templates/includes/subscription_widget.html -->
-<!-- Add this to your base.html where appropriate -->
+<!-- templates/includes/subscription_widget_compact.html -->
+<!-- Compact version with less vertical space -->
 
 {% if request.organization and request.staff.is_admin %}
-    {% with status=request.organization.subscription_status %}
-        {% if status.days is not None %}
-            <div class="subscription-widget alert alert-{{ status.class }} alert-dismissible fade show" role="alert">
-                <div class="d-flex align-items-center">
-                    <div class="subscription-icon me-3">
-                        {% if status.days > 7 %}
-                            <i class="fas fa-check-circle fa-2x"></i>
-                        {% elif status.days > 0 %}
-                            <i class="fas fa-exclamation-triangle fa-2x"></i>
-                        {% else %}
-                            <i class="fas fa-times-circle fa-2x"></i>
-                        {% endif %}
-                    </div>
-                    <div class="subscription-info flex-grow-1">
-                        <h6 class="mb-1">حالة الاشتراك</h6>
-                        <p class="mb-0">
-                            <strong>{{ status.text }}</strong>
-                            {% if request.organization.subscription_end_date %}
-                                <br>
-                                <small>ينتهي في: {{ request.organization.subscription_end_date }}</small>
+    {% with org=request.organization %}
+        {% if org.is_on_trial %}
+            {# Trial Period #}
+            {% with days_left=org.days_remaining %}
+                <div class="alert alert-{% if days_left <= 3 %}warning{% else %}info{% endif %} alert-dismissible fade show mb-0 subscription-banner" role="alert">
+                    <div class="container-fluid">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <i class="fas {% if days_left <= 3 %}fa-hourglass-half{% else %}fa-gift{% endif %}"></i>
+                            </div>
+                            <div class="col">
+                                <strong>الفترة التجريبية:</strong>
+                                متبقي {{ days_left }} يوم
+                                {% if org.trial_end %}(ينتهي {{ org.trial_end|date:"Y/m/d" }}){% endif %}
+                            </div>
+                            {% if days_left <= 7 %}
+                                <div class="col-auto">
+                                    <a href="{% url 'edit_organization' %}" class="btn btn-sm btn-primary">اشترك الآن</a>
+                                </div>
                             {% endif %}
-                        </p>
+                            <div class="col-auto">
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        </div>
                     </div>
-                    {% if status.days <= 7 %}
-                        <div class="subscription-action">
+                </div>
+            {% endwith %}
+            
+        {% elif org.subscription_status == 'active' %}
+            {# Active Subscription #}
+            {% with status=org.get_subscription_status_display %}
+                {% if status.days is not None and status.days <= 30 %}
+                    <div class="alert alert-{{ status.class }} alert-dismissible fade show mb-0 subscription-banner" role="alert">
+                        <div class="container-fluid">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <i class="fas {% if status.days > 7 %}fa-check-circle{% elif status.days > 0 %}fa-exclamation-triangle{% else %}fa-times-circle{% endif %}"></i>
+                                </div>
+                                <div class="col">
+                                    <strong>{{ status.text }}</strong>
+                                    {% if org.subscription_end_date %}(ينتهي {{ org.subscription_end_date|date:"Y/m/d" }}){% endif %}
+                                </div>
+                                {% if status.days <= 7 %}
+                                    <div class="col-auto">
+                                        <a href="{% url 'edit_organization' %}" class="btn btn-sm btn-warning">تجديد</a>
+                                    </div>
+                                {% endif %}
+                                <div class="col-auto">
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+        {% elif org.subscription_status == 'expired' or org.is_expired %}
+            {# Expired #}
+            <div class="alert alert-danger alert-dismissible fade show mb-0 subscription-banner" role="alert">
+                <div class="container-fluid">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="col">
+                            <strong>⚠️ الاشتراك منتهي!</strong> يرجى التجديد لمواصلة الخدمة
+                        </div>
+                        <div class="col-auto">
                             <a href="{% url 'edit_organization' %}" class="btn btn-sm btn-light">
-                                تجديد الآن
+                                <i class="fas fa-sync-alt"></i> تجديد الآن
                             </a>
                         </div>
-                    {% endif %}
+                        <div class="col-auto">
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    </div>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-            
-            <style>
-                .subscription-widget {
-                    position: sticky;
-                    top: 0;
-                    z-index: -1;
-                    border-radius: 0;
-                    margin-bottom: 0;
-                }
-                .subscription-icon {
-                    opacity: 0.8;
-                }
-                .subscription-widget.alert-success {
-                    background-color: #d4edda;
-                    border-color: #c3e6cb;
-                    color: #155724;
-                }
-                .subscription-widget.alert-warning {
-                    background-color: #fff3cd;
-                    border-color: #ffeeba;
-                    color: #856404;
-                }
-                .subscription-widget.alert-danger {
-                    background-color: #f8d7da;
-                    border-color: #f5c6cb;
-                    color: #721c24;
-                    animation: pulse-danger 2s infinite;
-                }
-                @keyframes pulse-danger {
-                    0%, 100% { opacity: 1; }
-                    50% { opacity: 0.85; }
-                }
-            </style>
         {% endif %}
+        
+        <style>
+            .subscription-banner {
+                border-radius: 0;
+                border-left: 0;
+                border-right: 0;
+                padding: 0.75rem 0;
+                margin: 0;
+                position: sticky;
+                top: 0;
+                z-index: 0;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            }
+            
+            .subscription-banner i {
+                font-size: 1.2rem;
+            }
+            
+            .subscription-banner.alert-danger {
+                animation: pulse-danger 2s infinite;
+            }
+            
+            @keyframes pulse-danger {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.9; }
+            }
+            
+            .subscription-banner .btn-close {
+                padding: 0.5rem;
+            }
+        </style>
     {% endwith %}
 {% endif %}
+
+<script>
+// Ensure close button works properly
+(function() {
+    'use strict';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle close buttons for subscription banners
+        document.querySelectorAll('.subscription-banner .btn-close').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                var alert = this.closest('.alert');
+                if (alert) {
+                    alert.classList.remove('show');
+                    setTimeout(function() {
+                        alert.style.display = 'none';
+                    }, 150);
+                }
+            });
+        });
+    });
+})();
+</script>

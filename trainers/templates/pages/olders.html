@@ -314,7 +314,7 @@ class TraineesManager {
                             <!-- Image -->
                             <div class="col-auto">
                                 <div class="candidate-list-images">
-                                    <a href="/profile/${trainer.id}/">
+                                    <a href="/profile/${trainer.id}">
                                         <img 
                                             src="${trainer.image_url || '{% static "images/logo/loginlogo.png" %}'}" 
                                             alt="" 
@@ -328,7 +328,7 @@ class TraineesManager {
                             <div class="col-lg-4">
                                 <div class="candidate-list-content mt-3 mt-lg-0">
                                     <h5 class="fs-19 mb-0">
-                                        <a class="primary-link" href="/profile/${trainer.id}/">
+                                        <a class="primary-link" href="/profile/${trainer.id}">
                                             ${trainer.full_name}
                                         </a>
                                     </h5>

@@ -58,12 +58,19 @@ INSTALLED_APPS = [
     'trainers.apps.TrainersConfig',
     'ckeditor',
     'django.contrib.humanize',
-    'storages',
+    
+    'cloudinary',
+    'cloudinary_storage',
 
 ]
+# ===============================
+# Cloudinary (MEDIA files only)
+# ===============================
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -107,7 +114,7 @@ if DEVELOPMENT_MODE is True:
             "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
         }
     }
-elif len(sys.argv) > 0 and sys.argv[1] != 'collectstatic':
+elif len(sys.argv) > 1 and sys.argv[1] != 'collectstatic':
     if os.getenv("DATABASE_URL", None) is None:
         raise Exception("DATABASE_URL environment variable not defined")
     DATABASES = {
@@ -148,17 +155,31 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
-STATIC_ROOT = 'static'
-STATIC_URL = 'static/'
-STATIC_DIRS= [
-    os.path.join(BASE_DIR,'trainers/static/')
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'trainers/static',
 ]
 
 #media
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR,'media')
+MEDIA_ROOT = None
 
+STORAGES = {
+       "default": {
+           "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+       },
+       "staticfiles": {
+           "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+       },
+   }
 CKEDITOR_BASEPATH = "/static/ckeditor/"
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
+}
 
 #Digital Ocean Spaces
 """

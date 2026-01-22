@@ -1,176 +1,446 @@
-<!-- templates/pages/subscription_status.html -->
-<!-- BONUS: Subscription status page for users to check their subscription -->
-
 {% extends '../base/base.html' %}
 {% load static %}
 
 {% block title %}حالة الاشتراك{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
+<div class="container-fluid px-4 py-3">
+    <!-- Header -->
+    <div class="mb-4">
+        <h2 class="mb-1 fw-bold text-dark">حالة الاشتراك</h2>
+        <p class="text-muted mb-0">{{ organization.name }}</p>
+    </div>
+
+    <!-- Status Banner -->
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-calendar-check"></i> حالة اشتراك {{ organization.name }}
-                    </h6>
-                </div>
-                <div class="card-body">
-                    
-                    <!-- Subscription Status Banner -->
-                    <div class="alert alert-{{ subscription_status.class }} mb-4">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h4 class="mb-2">
-                                    {% if subscription_status.class == 'success' %}
-                                        <i class="fas fa-check-circle"></i>
-                                    {% elif subscription_status.class == 'warning' %}
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                    {% else %}
-                                        <i class="fas fa-times-circle"></i>
-                                    {% endif %}
-                                    {{ subscription_status.text }}
-                                </h4>
+            <div class="subscription-status-banner status-{{ subscription_status.class }}">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="status-icon">
+                                {% if subscription_status.class == 'success' %}
+                                    <i class="fas fa-check-circle"></i>
+                                {% elif subscription_status.class == 'warning' %}
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                {% else %}
+                                    <i class="fas fa-times-circle"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h4 class="mb-1">{{ subscription_status.text }}</h4>
                                 {% if organization.subscription_end_date %}
-                                    <p class="mb-0">
-                                        <strong>ينتهي في:</strong> {{ organization.subscription_end_date }}
+                                    <p class="mb-0 opacity-75">
+                                        <strong>تاريخ الانتهاء:</strong> 
+                                        {{ organization.subscription_end_date|date:"d F Y" }}
                                         {% if days_left %}
-                                            ({{ days_left }} يوم)
+                                            <span class="badge bg-white bg-opacity-25 ms-2">
+                                                متبقي {{ days_left }} يوم
+                                            </span>
                                         {% endif %}
                                     </p>
                                 {% endif %}
                             </div>
-                            
                         </div>
                     </div>
-                    
-                    <!-- Subscription Details -->
-                    <div class="row mb-4">
-                        <div class="col-md-4">
-                            <div class="card border-left-primary shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                                تاريخ البداية
-                                            </div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                {{ organization.subscription_start_date|default:"غير محدد" }}
-                                            </div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-play-circle fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <div class="card border-left-warning shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                                تاريخ الانتهاء
-                                            </div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                {{ organization.subscription_end_date|default:"غير محدد" }}
-                                            </div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-stop-circle fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <div class="card border-left-info shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                                إجمالي المدفوعات
-                                            </div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                {{ total_paid }} ريال
-                                            </div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                        {% if is_admin and subscription_status.class != 'success' %}
+                            <a href="{% url 'renew_subscription' %}" class="btn btn-light btn-lg">
+                                <i class="fas fa-sync-alt me-2"></i>
+                                تجديد الاشتراك
+                            </a>
+                        {% endif %}
                     </div>
-                    
-                    <!-- Recent Payments -->
-                    {% if recent_payments %}
-                    <h5 class="mb-3"><i class="fas fa-history"></i> آخر المدفوعات</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary bg-opacity-10">
+                    <i class="fas fa-calendar-check text-primary"></i>
+                </div>
+                <div class="stat-content">
+                    <p class="stat-label">تاريخ البداية</p>
+                    <h3 class="stat-value">
+                        {{ organization.subscription_start_date|date:"d M Y"|default:"غير محدد" }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning bg-opacity-10">
+                    <i class="fas fa-calendar-times text-warning"></i>
+                </div>
+                <div class="stat-content">
+                    <p class="stat-label">تاريخ الانتهاء</p>
+                    <h3 class="stat-value">
+                        {{ organization.subscription_end_date|date:"d M Y"|default:"غير محدد" }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon bg-success bg-opacity-10">
+                    <i class="fas fa-coins text-success"></i>
+                </div>
+                <div class="stat-content">
+                    <p class="stat-label">إجمالي المدفوعات</p>
+                    <h3 class="stat-value">{{ total_paid|floatformat:0 }} ريال</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payment History -->
+    {% if recent_payments %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="fas fa-history me-2"></i>
+                        سجل المدفوعات
+                    </h6>
+                </div>
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
+                        <table class="table table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>التاريخ</th>
-                                    <th>المبلغ</th>
-                                    <th>المدة</th>
-                                    <th>الفترة</th>
-                                    <th>طريقة الدفع</th>
-                                    <th>من - إلى</th>
+                                    <th class="px-4 py-3">التاريخ</th>
+                                    <th class="py-3">المبلغ</th>
+                                    <th class="py-3">المدة</th>
+                                    <th class="py-3">الفترة</th>
+                                    <th class="py-3">طريقة الدفع</th>
+                                    <th class="py-3">الصلاحية</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for payment in recent_payments %}
                                 <tr>
-                                    <td>{{ payment.payment_date }}</td>
-                                    <td><strong>{{ payment.amount }} ريال</strong></td>
-                                    <td>{{ payment.duration_months }} شهر</td>
-                                    <td>{{ payment.get_period_display }}</td>
-                                    <td>{{ payment.get_payment_method_display }}</td>
-                                    <td>
-                                        <small>{{ payment.subscription_start }} → {{ payment.subscription_end }}</small>
+                                    <td class="px-4 py-3">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="fas fa-calendar text-muted"></i>
+                                            <span>{{ payment.payment_date|date:"d M Y" }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="badge bg-success px-3 py-2">
+                                            {{ payment.amount }} ريال
+                                        </span>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="text-muted">{{ payment.duration_months }} شهر</span>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="badge bg-primary bg-opacity-10 text-primary">
+                                            {{ payment.get_period_display }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="text-muted">
+                                            <i class="fas fa-credit-card me-1"></i>
+                                            {{ payment.get_payment_method_display }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3">
+                                        <small class="text-muted">
+                                            {{ payment.subscription_start|date:"d/m/Y" }} - 
+                                            {{ payment.subscription_end|date:"d/m/Y" }}
+                                        </small>
                                     </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
-                    {% else %}
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i>
-                        لا توجد مدفوعات مسجلة بعد
-                    </div>
-                    {% endif %}
-                    
-                    <!-- Next Payment Suggestion -->
-                    {% if next_payment_date and is_admin %}
-                    <div class="alert alert-info mt-4">
-                        <h6><i class="fas fa-bell"></i> تذكير</h6>
-                        <p class="mb-2">
-                            يُنصح بتجديد الاشتراك قبل <strong>{{ next_payment_date }}</strong>
-                        </p>
-                    </div>
-                    {% endif %}
-                    
                 </div>
             </div>
         </div>
     </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <h5 class="empty-state-title">لا توجد مدفوعات</h5>
+                        <p class="empty-state-text">لم يتم تسجيل أي مدفوعات حتى الآن</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Renewal Reminder -->
+    {% if next_payment_date and is_admin %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="renewal-reminder">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="reminder-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">تذكير بالتجديد</h6>
+                        <p class="mb-0 text-muted">
+                            يُنصح بتجديد الاشتراك قبل <strong>{{ next_payment_date|date:"d F Y" }}</strong> 
+                            لتجنب انقطاع الخدمة
+                        </p>
+                    </div>
+                    <a href="{% url 'renew_subscription' %}" class="btn btn-primary">
+                        تجديد الآن
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <style>
-    .border-left-primary {
-        border-left: 0.25rem solid #4e73df!important;
+:root {
+    --primary-color: #4e73df;
+    --success-color: #1cc88a;
+    --danger-color: #e74a3b;
+    --warning-color: #f6c23e;
+    --info-color: #36b9cc;
+    --gray-100: #f8f9fc;
+    --gray-200: #e3e6f0;
+    --gray-600: #858796;
+    --shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+body {
+    background-color: var(--gray-100);
+}
+
+/* Subscription Status Banner */
+.subscription-status-banner {
+    padding: 2rem;
+    border-radius: 12px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.subscription-status-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+}
+
+.subscription-status-banner.status-success {
+    background: linear-gradient(135deg, #1cc88a 0%, #17a673 100%);
+}
+
+.subscription-status-banner.status-warning {
+    background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);
+    color: #000;
+}
+
+.subscription-status-banner.status-danger {
+    background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%);
+}
+
+.status-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+/* Stat Cards */
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0.5rem 2rem 0 rgba(58, 59, 69, 0.2);
+}
+
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    color: #2d3748;
+}
+
+/* Table Enhancements */
+.table {
+    font-size: 0.95rem;
+}
+
+.table thead th {
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gray-600);
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: var(--gray-100);
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Empty State */
+.empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    color: var(--gray-200);
+    margin-bottom: 1.5rem;
+}
+
+.empty-state-title {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state-text {
+    color: var(--gray-600);
+    margin: 0;
+}
+
+/* Renewal Reminder */
+.renewal-reminder {
+    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+    border: 1px solid #c7d2fe;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.reminder-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--info-color) 0%, #2ba3b4 100%);
+    color: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+/* Card Improvements */
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .subscription-status-banner {
+        padding: 1.5rem;
     }
-    .border-left-warning {
-        border-left: 0.25rem solid #f6c23e!important;
+    
+    .stat-value {
+        font-size: 1.5rem;
     }
-    .border-left-info {
-        border-left: 0.25rem solid #36b9cc!important;
+    
+    .status-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 24px;
     }
+    
+    .table {
+        font-size: 0.875rem;
+    }
+}
+
+/* Animation */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stat-card, .card, .subscription-status-banner {
+    animation: slideInUp 0.4s ease;
+}
+
+.stat-card:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.stat-card:nth-child(3) {
+    animation-delay: 0.2s;
+}
 </style>
 {% endblock %}

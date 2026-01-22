@@ -1,55 +1,97 @@
 {% extends 'base/base.html' %}
 {% load static %}
-{% block title %}
-    {{ trainers.first_name }} {{ trainers.last_name }}
-{% endblock %}
+
+{% block title %}{{ trainer.first_name }} {{ trainer.last_name }}{% endblock %}
+
 {% block content %}
+<!-- CSRF Token -->
+{% csrf_token %}
 
 <style>
-  p, .card-title, .card-text {
+p, .card-title, .card-text {
     word-wrap: break-word;
+}
 
+.row, .col-md-6, .col-md-12, .col-sm-3, .col-sm-9, .col-md-4, .col-lg-4, .col-lg-8, .col-12, .col-md-4 {
+    width: 100% !important;
+    padding-right: 0px !important;
+    padding-left: 0px !important;
 }
-.row,.col-md-6,.col-md-12,.col-sm-3,.col-sm-9,.col-md-4,.col-lg-4,.col-lg-8,.col-12,.col-md-4{
-  width: 100% !important;
-  
+
+.loading-overlay {
+    opacity: 0.6;
+    pointer-events: none;
 }
-.row,.col-md-6,.col-md-12,.col-sm-3,.col-sm-9,.col-md-4,.col-lg-4,.col-lg-8,.col-12,.col-md-4{
-  width: 100% !important;
-  
-  padding-right: 0px !important;
-  padding-left: 0px !important;
+
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    height: 20px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+}
+
+.toast {
+    min-width: 250px;
+    margin-bottom: 10px;
 }
 </style>
 
 <div class="container-fluid align-items-center pr-2" style="background-color: #f8f9fa;" dir="rtl">
-    <div class="container-fluid mt-2 ml-0">
+    <!-- Toast Container for Messages -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">جاري التحميل...</span>
+        </div>
+        <p class="mt-3 text-muted">جاري تحميل بيانات المتدرب...</p>
+    </div>
+
+    <!-- Profile Content -->
+    <div id="profileContent" class="container-fluid mt-2 ml-0" style="display: none;">
         <div class="row">
             <!-- Profile Card -->
             <div class="col-lg-4">
                 <div class="card mb-4">
                     <div class="card-body text-center">
                         <div class="position-relative">
-                            <img src="{% if trainers.image %}{{ trainers.image.url }}{% else %}{% static 'images/logo/logo.png' %}{% endif %}" alt="profile"
+                            <img id="trainerImage" src="{% static 'images/logo/logo.png' %}" alt="profile"
                                 class="rounded-circle img-fluid" style="width: 150px; height: 150px; object-fit: cover;">
-                            <span class="position-absolute top-0 start-100 translate-middle badge {% if trainers.is_active %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
-                                {% if trainers.is_active %}نشط{% else %}غير نشط{% endif %}
+                            <span id="trainerStatus" class="position-absolute top-0 start-100 translate-middle badge bg-success rounded-pill">
+                                نشط
                             </span>
                         </div>
-                        <h5 class="my-3">{{ trainers.first_name }} {{ trainers.last_name }}</h5>
+                        <h5 class="my-3" id="trainerName">{{ trainer.first_name }} {{ trainer.last_name }}</h5>
                         <div class="mb-2">
-                            <span class="badge bg-secondary me-1">{{ trainers.get_category_display }}</span>
-                            <span class="badge bg-info"> حزام {{ trainers.belt_degree }}</span>
+                            <span class="badge bg-secondary me-1" id="trainerCategory"></span>
+                            <span class="badge bg-info" id="trainerBelt"></span>
                         </div>
-                        <p class="text-muted mb-1">{{ trainers.age }} عاما</p>
+                        <p class="text-muted mb-1" id="trainerAge"></p>
                         <div class="d-flex justify-content-center mt-4">
-                            <button type="button" onclick="confirmDelete({{ trainers.id }})" class="btn btn-danger me-2">
+                            <button type="button" onclick="confirmDelete({{ trainer_id }})" class="btn btn-danger me-2">
                                 <i class="fas fa-trash-alt"></i> حذف
                             </button>
-                            <a href="{% url 'edit_trainee' trainers.id %}" class="btn ml-2 btn-primary">
+                            <a href="{% url 'edit_trainee' trainer_id %}" class="btn ml-2 btn-primary">
                                 <i class="fas fa-edit"></i> تعديل
                             </a>
-                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPaymentModal">إضافة دفعة</button>
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                                إضافة دفعة
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -61,121 +103,23 @@
                     <div class="card-header">
                         <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>المعلومات الشخصية</h5>
                     </div>
-                    <div class="card-body">
-                        <div class="row mb-3">
-                            <div class="col-sm-3">
-                                <p class="mb-0"><i class="fas fa-id-card me-2"></i>رقم البطاقة الوطنية</p>
-                            </div>
-                            <div class="col-sm-9">
-                                <p class="text-muted mb-0">{{ trainers.CIN }}</p>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row mb-3">
-                            <div class="col-sm-3">
-                                <p class="mb-0"><i class="fas fa-user me-2"></i>الاسم الكامل</p>
-                            </div>
-                            <div class="col-sm-9">
-                                <p class="text-muted mb-0">{{ trainers.first_name }} {{ trainers.last_name }}</p>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row mb-3">
-                            <div class="col-sm-3">
-                                <p class="mb-0"><i class="fas fa-calendar-alt me-2"></i>تاريخ الميلاد</p>
-                            </div>
-                            <div class="col-sm-9">
-                                <p class="text-muted mb-0">{{ trainers.birth_day }}</p>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row mb-3">
-                            <div class="col-sm-3">
-                                <p class="mb-0"><i class="fas fa-envelope me-2"></i>البريد الإلكتروني</p>
-                            </div>
-                            <div class="col-sm-9">
-                                <p class="text-muted mb-0">{{ trainers.email }}</p>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row mb-3">
-                            <div class="col-sm-3">
-                                <p class="mb-0"><i class="fas fa-phone me-2"></i>الهاتف</p>
-                            </div>
-                            <div class="col-sm-9">
-                                <p class="text-muted mb-0">{{ trainers.phone }}</p>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row mb-3">
-                            <div class="col-sm-3">
-                                <p class="mb-0"><i class="fas fa-phone-square me-2"></i>هاتف ولي الأمر</p>
-                            </div>
-                            <div class="col-sm-9">
-                              {% if trainers.phone_parent %}
-                                <p class="text-muted mb-0">{{ trainers.phone_parent }}</p>
-                              {% else %}
-                                <p class="text-muted mb-0">{{ trainers.phone }}</p>
-                              {% endif %}
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row mb-3">
-                            <div class="col-sm-3">
-                                <p class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>العنوان</p>
-                            </div>
-                            <div class="col-sm-9">
-                                <p class="text-muted mb-0">{{ trainers.address }}</p>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row mb-3">
-                            <div class="col-sm-3">
-                                <p class="mb-0"><i class="fas fa-medal me-2"></i>المستوى الدراسي</p>
-                            </div>
-                            <div class="col-sm-9">
-                                <p class="text-muted mb-0">{{ trainers.Degree }}</p>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row mb-3">
-                            <div class="col-sm-3">
-                                <p class="mb-0"><i class="fas fa-ruler-vertical me-2"></i>الطول</p>
-                            </div>
-                            <div class="col-sm-9">
-                                <p class="text-muted mb-0">{{ trainers.tall }} متر</p>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row mb-3">
-                            <div class="col-sm-3">
-                                <p class="mb-0"><i class="fas fa-weight me-2"></i>الوزن</p>
-                            </div>
-                            <div class="col-sm-9">
-                                <p class="text-muted mb-0">{{ trainers.weight }} كغ</p>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row">
-                            <div class="col-sm-3">
-                                <p class="mb-0"><i class="fas fa-clock me-2"></i>تاريخ الانخراط</p>
-                            </div>
-                            <div class="col-sm-9">
-                                <p class="text-muted mb-0">{{ trainers.started_day }}</p>
-                            </div>
-                        </div>
+                    <div class="card-body" id="personalInfoContainer">
+                        <!-- Dynamic content loaded via JavaScript -->
                     </div>
                 </div>
-                <div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel" aria-hidden="true">
+
+                <!-- Add Payment Modal -->
+                <div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel">
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title" id="addPaymentModalLabel"><i class="fas fa-money-bill-wave me-2"></i>إضافة دفعة</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                <h5 class="modal-title" id="addPaymentModalLabel">
+                                    <i class="fas fa-money-bill-wave me-2"></i>إضافة دفعة
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
                             </div>
-                            <form method="POST" action="">
+                            <form id="addPaymentForm">
                                 {% csrf_token %}
-                                <input type="hidden" name="trainer" value="{{ trainers.id }}">
                                 <div class="modal-body">
                                     <div class="mb-3">
                                         <label for="paymentdate" class="form-label">تاريخ الدفع:</label>
@@ -185,146 +129,58 @@
                                     <div class="mb-3">
                                         <label class="form-label">فئة الدفع:</label>
                                         <div class="form-check">
-                                            <input type="checkbox" name="paymentCategry[]" value="month" class="form-check-input" id="month">
-                                            <label class="form-check-label mr-4" for="month" >شهرية  </label>
+                                            <input type="checkbox" name="category" value="month" class="form-check-input" id="month">
+                                            <label class="form-check-label mr-4" for="month">شهرية</label>
                                         </div>
                                         <div class="form-check">
-                                            <input type="checkbox" name="paymentCategry[]" value="subscription" class="form-check-input" id="subscription">
-                                            <label class="form-check-label mr-4" for="subscription">انخراط  </label>
+                                            <input type="checkbox" name="category" value="subscription" class="form-check-input" id="subscription">
+                                            <label class="form-check-label mr-4" for="subscription">انخراط</label>
                                         </div>
                                         <div class="form-check">
-                                            <input type="checkbox" name="paymentCategry[]" value="assurance" class="form-check-input" id="assurance">
-                                            <label class="form-check-label mr-4" for="assurance">التأمين  </label>
+                                            <input type="checkbox" name="category" value="assurance" class="form-check-input" id="assurance">
+                                            <label class="form-check-label mr-4" for="assurance">التأمين</label>
                                         </div>
                                         <div class="form-check">
-                                            <input type="checkbox" name="paymentCategry[]" value="jawaz" class="form-check-input" id="jawaz">
-                                            <label class="form-check-label mr-4" for="jawaz">جواز  </label>
+                                            <input type="checkbox" name="category" value="jawaz" class="form-check-input" id="jawaz">
+                                            <label class="form-check-label mr-4" for="jawaz">جواز</label>
                                         </div>
                                     </div>
-                            
-                                    
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                                    <button type="submit" class="btn btn-primary">إضافة</button>
+                                    <button type="submit" class="btn btn-primary" id="submitPaymentBtn">
+                                        <span id="submitPaymentText">إضافة</span>
+                                        <span id="submitPaymentSpinner" style="display: none;">
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                            جاري الحفظ...
+                                        </span>
+                                    </button>
                                 </div>
                             </form>
                         </div>
                     </div>
                 </div>
-                <!-- Payment Status Card -->
-                 <div class="jawaz-payments">
-                    {% if jawaz %}
-                    <div class="card mb-4  text-primary">
-                        <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>حالة الدفع الجواز</h5>
-                        </div>
-                        
-                        {% for jawa in jawaz %}
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-sm-3">
-                                    <p class="mb-0"><i class="fas fa-calendar-alt me-2"></i>تاريخ الدفع</p>
-                                </div>
-                                <div class="col-sm-9">
-                                    <p class="text-muted mb-0">{{ jawa.paymentdate }}</p>
-                                </div>
-                            </div>
-                            <hr>
-                        </div>
-                        {% endfor %}
-                        {% else %}
-                        <p class="text-center text-muted">
-                            <i class="fas fa-info-circle me-2"></i>لم يتم دفع جواز لهذا المتدرب حتى الآن.
-                        </p>
-                        {% endif %}
 
-                                    
-                 </div>
-                 <div class="assurance-payments">
-                    {% if assurance %}
-                    <div class="card mb-4 text-warning">
-                        <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>حالة الدفع التأمين</h5>
-                        </div>
-                        {% for assuranc in assurance %}
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-sm-3">
-                                    <p class="mb-0"><i class="fas fa-calendar-alt me-2"></i>تاريخ الدفع</p>
-                                </div>
-                                <div class="col-sm-9">
-                                    <p class="text-muted mb-0">{{ assuranc.paymentdate }}</p>
-                                </div>
-                            </div>
-                            <hr>
+                <!-- Payment Status Cards -->
+                <div id="jawazPaymentsContainer"></div>
+                <div id="assurancePaymentsContainer"></div>
+                <div id="subscriptionPaymentsContainer"></div>
 
-                        </div>
-                    
-                        {% endfor %}
-                        {% else %}
-                        <p class="text-center text-muted">
-                            <i class="fas fa-info-circle me-2"></i>لم يتم دفع تأمين لهذا المتدرب حتى الآن.
-                        </p>
-                        {% endif %}
-                    
-                </div>
-                <div class="subscription-payments">
-                    {% if subscription %}
-                    <div class="card mb-4 text-secondary">
-                        <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>حالة الدفع الانخراط</h5>
-                        </div>
-                        {% for subscrip in subscription %}
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-sm-3">
-                                    <p class="mb-0"><i class="fas fa-calendar-alt me-2"></i>تاريخ الدفع</p>
-                                </div>
-                                <div class="col-sm-9">
-                                    <p class="text-muted mb-0">{{ subscrip.paymentdate }}</p>
-                                </div>
-                            </div>
-                            <hr>
-                        </div>
-                        {% endfor %}
-                        {% else %}
-                        <p class="text-center text-muted">
-                            <i class="fas fa-info-circle me-2"></i>لم يتم دفع انخراط لهذا المتدرب حتى الآن.
-                        </p>
-                        {% endif %}
-                    </div>
-                </div>
-
+                <!-- Monthly Payments Card -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>حالة الدفع الاشهر</h5>
-                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPaymentModal">إضافة دفعة</button>
+                        <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>حالة الدفع الأشهر</h5>
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                            إضافة دفعة
+                        </button>
                     </div>
                     <div class="card-body">
                         <p class="mb-4">
                             <i class="fas fa-circle text-success me-2"></i>الأشهر المدفوعة
                             <i class="fas fa-circle text-danger me-2 ms-4"></i>الأشهر غير المدفوعة
                         </p>
-                        
-                        <div class="row">
-                            {% for payment in payment_status %}
-                            <div class="col-md-4 mb-3">
-                                <p class="mb-1 small">
-                                    {% if payment.status == 'paid' %}
-                                    {{ payment.month }} (مدفوع)
-                                    {% else %}
-                                    {{ payment.month }} (غير مدفوع)
-                                    {% endif %}
-                                </p>
-                                <div class="progress" style="height: 5px;">
-                                    <div class="progress-bar {% if payment.status == 'paid' %}bg-success{% else %}bg-danger{% endif %}" 
-                                         role="progressbar" 
-                                         style="width: 100%">
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
+                        <div class="row" id="monthlyPaymentsContainer">
+                            <!-- Dynamic content -->
                         </div>
                     </div>
                 </div>
@@ -338,118 +194,65 @@
                     <div class="card-header">
                         <h5 class="mb-0"><i class="fas fa-calendar-check me-2"></i>الفعاليات التي شارك بها</h5>
                     </div>
-                    <div class="card-body">
-                        {% if articles %}
-                            <div class="row">
-                                {% for article in articles %}
-                                <div class="col-md-6 col-lg-4 mb-4">
-                                    <div class="card h-100">
-                                        <div class="card-body">
-                                            <h6 class="card-title text-primary">
-                                                <i class="fas fa-star me-2"></i>{{ article.title }}
-                                            </h6>
-                                            <p class="card-text">
-                                                <i class="fas fa-calendar me-2"></i><strong>التاريخ:</strong> {{ article.date|date:"d-m-Y" }}<br>
-                                                <i class="fas fa-map-marker-alt me-2"></i><strong>الموقع:</strong> {{ article.location }}<br>
-                                                <i class="fas fa-info-circle me-2"></i><strong>النشاط:</strong> {{ article.title }}
-                                            </p>
-                                            <a href="{% url 'article_detail' article.id %}" class="btn btn-outline-primary btn-sm">
-                                                <i class="fas fa-eye me-1"></i>عرض المزيد
-                                            </a>
-                                        </div>
-                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <p class="text-center text-muted">
-                                <i class="fas fa-info-circle me-2"></i>لا توجد فعاليات مرتبطة بهذا المتدرب حتى الآن.
-                            </p>
-                        {% endif %}
+                    <div class="card-body" id="articlesContainer">
+                        <!-- Dynamic content -->
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Delete Confirmation Script -->
- <!-- Documents Section -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>الوثائق المرفقة</h5>
-            </div>
-            <div class="card-body">
-                {% if docs %}
-                    <div class="row">
-                        {% for doc in docs %}
-                        <div class="col-md-6 col-lg-4 mb-3">
-                            <div class="card h-100 border-primary">
-                                <div class="card-body">
-                                    <h6 class="card-title text-primary">
-                                        <i class="fas fa-file-pdf me-2"></i>{{ doc.document_type }}
-                                    </h6>
-                                    <p class="card-text small text-muted">
-                                        <i class="fas fa-calendar me-2"></i>تاريخ الرفع: {{ doc.uploaded_at|date:"d-m-Y H:i" }}
-                                    </p>
-                                    <div class="d-flex gap-2">
-                                        <a href="{{ doc.file.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                            <i class="fas fa-eye me-1"></i>عرض
-                                        </a>
-                                        <a href="{{ doc.file.url }}" download class="btn btn-outline-success btn-sm">
-                                            <i class="fas fa-download me-1"></i>تحميل
-                                        </a>
-                                        <button onclick="confirmDeleteDoc({{ doc.id }})" class="btn btn-outline-danger btn-sm">
-                                            <i class="fas fa-trash me-1"></i>حذف
-                                        </button>
+        <!-- Documents Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>الوثائق المرفقة</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="documentsContainer">
+                            <!-- Dynamic content -->
+                        </div>
+                        
+                        <!-- Upload New Document Form -->
+                        <div class="mt-4">
+                            <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#uploadDocForm">
+                                <i class="fas fa-plus me-2"></i>إضافة وثيقة جديدة
+                            </button>
+                            
+                            <div class="collapse mt-3" id="uploadDocForm">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <form id="uploadDocumentForm" enctype="multipart/form-data">
+                                            {% csrf_token %}
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="document_type" class="form-label">نوع الوثيقة</label>
+                                                    <select name="document_type" id="document_type" class="form-select" required>
+                                                        <option value="">اختر نوع الوثيقة</option>
+                                                        <option value="بطاقة الوطنية">بطاقة الوطنية</option>
+                                                        <option value="الحالة المدنية">الحالة المدنية</option>
+                                                        <option value="وثيقة أخرى">وثيقة أخرى</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="document_file" class="form-label">الملف</label>
+                                                    <input type="file" name="document_file" id="document_file" 
+                                                           class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                                                    <small class="text-muted">PDF, JPG, PNG (الحد الأقصى 5MB)</small>
+                                                </div>
+                                            </div>
+                                            <button type="submit" class="btn btn-success" id="uploadDocBtn">
+                                                <span id="uploadDocText">
+                                                    <i class="fas fa-upload me-2"></i>رفع الوثيقة
+                                                </span>
+                                                <span id="uploadDocSpinner" style="display: none;">
+                                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                                    جاري الرفع...
+                                                </span>
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">لا توجد وثائق مرفقة لهذا المتدرب حتى الآن.</p>
-                    </div>
-                {% endif %}
-                
-                <!-- Upload New Document Form -->
-                <div class="mt-4">
-                    <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#uploadDocForm">
-                        <i class="fas fa-plus me-2"></i>إضافة وثيقة جديدة
-                    </button>
-                    
-                    <div class="collapse mt-3" id="uploadDocForm">
-                        <div class="card">
-                            <div class="card-body">
-                                <form method="POST" enctype="multipart/form-data">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="action" value="upload_document">
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label for="document_type" class="form-label">نوع الوثيقة</label>
-                                            <select name="document_type" id="document_type" class="form-select" required>
-                                                <option value="">اختر نوع الوثيقة</option>
-                                                <option value="بطاقة الوطنية">بطاقة الوطنية</option>
-                                                <option value="الحالة المدنية">الحالة المدنية</option>
-                                                <option value="وثيقة أخرى">وثيقة أخرى</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label for="document_file" class="form-label">الملف</label>
-                                            <input type="file" name="document_file" id="document_file" 
-                                                   class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                                            <small class="text-muted">PDF, JPG, PNG (الحد الأقصى 5MB)</small>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn btn-success">
-                                        <i class="fas fa-upload me-2"></i>رفع الوثيقة
-                                    </button>
-                                </form>
                             </div>
                         </div>
                     </div>
@@ -460,26 +263,494 @@
 </div>
 
 <script>
-function confirmDeleteDoc(docId) {
-    if (confirm("هل أنت متأكد أنك تريد حذف هذه الوثيقة؟")) {
-        // Create a form and submit it
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.innerHTML = `
-            {% csrf_token %}
-            <input type="hidden" name="action" value="delete_document">
-            <input type="hidden" name="doc_id" value="${docId}">
-        `;
-        document.body.appendChild(form);
-        form.submit();
+class TrainerProfileManager {
+    constructor(trainerId) {
+        this.trainerId = trainerId;
+        this.profileData = null;
+        this.init();
     }
-};
 
-function confirmDelete(trainerId) {
-    if (confirm("هل أنت متأكد أنك تريد حذف هذا المتدرب؟")) {
-        window.location.href = `/delete_trainer/${trainerId}/`;
+    async init() {
+        // Set today's date in payment form
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('paymentdate').value = today;
+
+        // Setup event listeners
+        this.setupEventListeners();
+
+        // Load profile data
+        await this.loadProfileData();
+    }
+
+    setupEventListeners() {
+        // Add payment form
+        document.getElementById('addPaymentForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleAddPayment();
+        });
+
+        // Upload document form
+        document.getElementById('uploadDocumentForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleUploadDocument();
+        });
+    }
+
+    async loadProfileData() {
+        document.getElementById('loadingIndicator').style.display = 'block';
+        document.getElementById('profileContent').style.display = 'none';
+
+        try {
+            const response = await fetch(`/api/trainer/${this.trainerId}/data/`);
+            const data = await response.json();
+
+            if (data.success === false) {
+                throw new Error(data.error);
+            }
+
+            this.profileData = data;
+            this.renderProfile(data);
+
+            document.getElementById('loadingIndicator').style.display = 'none';
+            document.getElementById('profileContent').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error loading profile:', error);
+            document.getElementById('loadingIndicator').innerHTML = `
+                <div class="alert alert-danger">
+                    حدث خطأ أثناء تحميل البيانات: ${error.message}
+                </div>
+            `;
+        }
+    }
+
+    renderProfile(data) {
+        // Render trainer info
+        this.renderTrainerInfo(data.trainer);
+        // Render personal details
+        this.renderPersonalInfo(data.trainer);
+        // Render payments
+        this.renderPayments(data.payments);
+        // Render articles
+        this.renderArticles(data.articles);
+        // Render documents
+        this.renderDocuments(data.documents);
+    }
+
+    renderTrainerInfo(trainer) {
+        // Update image
+        if (trainer.image_url) {
+            document.getElementById('trainerImage').src = trainer.image_url;
+        }
+
+        // Update status
+        const statusBadge = document.getElementById('trainerStatus');
+        statusBadge.textContent = trainer.is_active ? 'نشط' : 'غير نشط';
+        statusBadge.className = `position-absolute top-0 start-100 translate-middle badge ${trainer.is_active ? 'bg-success' : 'bg-danger'} rounded-pill`;
+
+        // Update name and info
+        document.getElementById('trainerName').textContent = `${trainer.first_name} ${trainer.last_name}`;
+        document.getElementById('trainerCategory').textContent = trainer.category;
+        document.getElementById('trainerBelt').textContent = `حزام ${trainer.belt_degree}`;
+        document.getElementById('trainerAge').textContent = `${trainer.age || 'N/A'} عاما`;
+    }
+
+    renderPersonalInfo(trainer) {
+        const container = document.getElementById('personalInfoContainer');
+        
+        const infoItems = [
+            { icon: 'id-card', label: 'رقم البطاقة الوطنية', value: trainer.cin },
+            { icon: 'user', label: 'الاسم الكامل', value: `${trainer.first_name} ${trainer.last_name}` },
+            { icon: 'calendar-alt', label: 'تاريخ الميلاد', value: trainer.birth_day || 'غير محدد' },
+            { icon: 'envelope', label: 'البريد الإلكتروني', value: trainer.email || 'غير محدد' },
+            { icon: 'phone', label: 'الهاتف', value: trainer.phone || 'غير محدد' },
+            { icon: 'phone-square', label: 'هاتف ولي الأمر', value: trainer.phone_parent || trainer.phone || 'غير محدد' },
+            { icon: 'map-marker-alt', label: 'العنوان', value: trainer.address || 'غير محدد' },
+            { icon: 'medal', label: 'المستوى الدراسي', value: trainer.degree || 'غير محدد' },
+            { icon: 'ruler-vertical', label: 'الطول', value: trainer.tall ? `${trainer.tall} متر` : 'غير محدد' },
+            { icon: 'weight', label: 'الوزن', value: trainer.weight ? `${trainer.weight} كغ` : 'غير محدد' },
+            { icon: 'clock', label: 'تاريخ الانخراط', value: trainer.started_day || 'غير محدد' }
+        ];
+
+        container.innerHTML = infoItems.map((item, index) => `
+            <div class="row mb-3">
+                <div class="col-sm-3">
+                    <p class="mb-0"><i class="fas fa-${item.icon} me-2"></i>${item.label}</p>
+                </div>
+                <div class="col-sm-9">
+                    <p class="text-muted mb-0">${item.value}</p>
+                </div>
+            </div>
+            ${index < infoItems.length - 1 ? '<hr>' : ''}
+        `).join('');
+    }
+
+    renderPayments(payments) {
+        // Render Jawaz
+        this.renderPaymentCategory(
+            'jawazPaymentsContainer',
+            payments.jawaz,
+            'جواز',
+            'text-primary'
+        );
+
+        // Render Assurance
+        this.renderPaymentCategory(
+            'assurancePaymentsContainer',
+            payments.assurance,
+            'التأمين',
+            'text-warning'
+        );
+
+        // Render Subscription
+        this.renderPaymentCategory(
+            'subscriptionPaymentsContainer',
+            payments.subscription,
+            'الانخراط',
+            'text-secondary'
+        );
+
+        // Render monthly status
+        this.renderMonthlyStatus(payments.monthly_status);
+    }
+
+    renderPaymentCategory(containerId, payments, title, colorClass) {
+        const container = document.getElementById(containerId);
+        
+        if (payments.length === 0) {
+            container.innerHTML = `
+                <div class="card mb-4 ${colorClass}">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>حالة الدفع ${title}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-center text-muted">
+                            <i class="fas fa-info-circle me-2"></i>لم يتم دفع ${title} لهذا المتدرب حتى الآن.
+                        </p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        const paymentsHtml = payments.map(payment => `
+            <div class="row">
+                <div class="col-sm-3">
+                    <p class="mb-0"><i class="fas fa-calendar-alt me-2"></i>تاريخ الدفع</p>
+                </div>
+                <div class="col-sm-9">
+                    <p class="text-muted mb-0">${payment.date}</p>
+                </div>
+            </div>
+            <hr>
+        `).join('');
+
+        container.innerHTML = `
+            <div class="card mb-4 ${colorClass}">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>حالة الدفع ${title}</h5>
+                </div>
+                <div class="card-body">
+                    ${paymentsHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    renderMonthlyStatus(monthlyStatus) {
+        const container = document.getElementById('monthlyPaymentsContainer');
+        
+        if (monthlyStatus.length === 0) {
+            container.innerHTML = `
+                <div class="col-12">
+                    <p class="text-center text-muted">لا توجد دفعات شهرية</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = monthlyStatus.map(payment => `
+            <div class="col-md-4 mb-3">
+                <p class="mb-1 small">
+                    ${payment.month} (${payment.status === 'paid' ? 'مدفوع' : 'غير مدفوع'})
+                </p>
+                <div class="progress" style="height: 5px;">
+                    <div class="progress-bar ${payment.status === 'paid' ? 'bg-success' : 'bg-danger'}" 
+                         role="progressbar" 
+                         style="width: 100%">
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderArticles(articles) {
+        const container = document.getElementById('articlesContainer');
+        
+        if (articles.length === 0) {
+            container.innerHTML = `
+                <p class="text-center text-muted">
+                    <i class="fas fa-info-circle me-2"></i>لا توجد فعاليات مرتبطة بهذا المتدرب حتى الآن.
+                </p>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="row">
+                ${articles.map(article => `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title text-primary">
+                                    <i class="fas fa-star me-2"></i>${article.title}
+                                </h6>
+                                <p class="card-text">
+                                    <i class="fas fa-calendar me-2"></i><strong>التاريخ:</strong> ${article.date}<br>
+                                    <i class="fas fa-map-marker-alt me-2"></i><strong>الموقع:</strong> ${article.location}
+                                </p>
+                                <a href="/article/${article.id}/" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>عرض المزيد
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    renderDocuments(documents) {
+        const container = document.getElementById('documentsContainer');
+        
+        if (documents.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">لا توجد وثائق مرفقة لهذا المتدرب حتى الآن.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="row">
+                ${documents.map(doc => `
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100 border-primary">
+                            <div class="card-body">
+                                <h6 class="card-title text-primary">
+                                    <i class="fas fa-file-pdf me-2"></i>${doc.type}
+                                </h6>
+                                <p class="card-text small text-muted">
+                                    <i class="fas fa-calendar me-2"></i>تاريخ الرفع: ${new Date(doc.uploaded_at).toLocaleString('ar')}
+                                </p>
+                                <div class="d-flex gap-2">
+                                    <a href="${doc.file_url}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye me-1"></i>عرض
+                                    </a>
+                                    <a href="${doc.file_url}" download class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-download me-1"></i>تحميل
+                                    </a>
+                                    <button onclick="profileManager.confirmDeleteDoc(${doc.id})" class="btn btn-outline-danger btn-sm">
+                                        <i class="fas fa-trash me-1"></i>حذف
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    async handleAddPayment() {
+        const form = document.getElementById('addPaymentForm');
+        const formData = new FormData(form);
+        
+        const categories = formData.getAll('category');
+        const date = formData.get('paymentdate');
+
+        if (categories.length === 0) {
+            this.showToast('يرجى تحديد فئة دفع واحدة على الأقل', 'warning');
+            return;
+        }
+
+        const submitBtn = document.getElementById('submitPaymentBtn');
+        submitBtn.disabled = true;
+        document.getElementById('submitPaymentText').style.display = 'none';
+        document.getElementById('submitPaymentSpinner').style.display = 'inline';
+
+        try {
+            const response = await fetch(`/api/trainer/${this.trainerId}/add-payment/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCSRFToken()
+                },
+                body: JSON.stringify({
+                    categories: categories,
+                    date: date
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showToast(data.message, 'success');
+                
+                // Reload profile data
+                await this.loadProfileData();
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addPaymentModal'));
+                modal.hide();
+                
+                // Reset form
+                form.reset();
+                document.getElementById('paymentdate').value = new Date().toISOString().split('T')[0];
+            } else {
+                this.showToast(data.error, 'danger');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            this.showToast('حدث خطأ أثناء إضافة الدفعة', 'danger');
+        } finally {
+            submitBtn.disabled = false;
+            document.getElementById('submitPaymentText').style.display = 'inline';
+            document.getElementById('submitPaymentSpinner').style.display = 'none';
+        }
+    }
+
+    async handleUploadDocument() {
+        const form = document.getElementById('uploadDocumentForm');
+        const formData = new FormData(form);
+
+        const uploadBtn = document.getElementById('uploadDocBtn');
+        uploadBtn.disabled = true;
+        document.getElementById('uploadDocText').style.display = 'none';
+        document.getElementById('uploadDocSpinner').style.display = 'inline';
+
+        try {
+            const response = await fetch(`/api/trainer/${this.trainerId}/upload-document/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': this.getCSRFToken()
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showToast(data.message, 'success');
+                
+                // Reload profile data
+                await this.loadProfileData();
+                
+                // Reset form and collapse
+                form.reset();
+                const collapse = bootstrap.Collapse.getInstance(document.getElementById('uploadDocForm'));
+                if (collapse) collapse.hide();
+            } else {
+                this.showToast(data.error, 'danger');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            this.showToast('حدث خطأ أثناء رفع الوثيقة', 'danger');
+        } finally {
+            uploadBtn.disabled = false;
+            document.getElementById('uploadDocText').style.display = 'inline';
+            document.getElementById('uploadDocSpinner').style.display = 'none';
+        }
+    }
+
+    async confirmDeleteDoc(docId) {
+        if (!confirm('هل أنت متأكد أنك تريد حذف هذه الوثيقة؟')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/trainer/${this.trainerId}/delete-document/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCSRFToken()
+                },
+                body: JSON.stringify({
+                    doc_id: docId
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showToast(data.message, 'success');
+                await this.loadProfileData();
+            } else {
+                this.showToast(data.error, 'danger');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            this.showToast('حدث خطأ أثناء حذف الوثيقة', 'danger');
+        }
+    }
+
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0 show`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+
+        document.getElementById('toastContainer').appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    getCSRFToken() {
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        if (!cookieValue) {
+            cookieValue = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        }
+        return cookieValue;
     }
 }
 
+// Global variable for access from inline scripts
+let profileManager;
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    profileManager = new TrainerProfileManager({{ trainer_id }});
+});
+
+// Delete trainer function (keep for compatibility)
+function confirmDelete(trainerId) {
+    if (confirm('هل أنت متأكد أنك تريد حذف هذا المتدرب؟')) {
+        window.location.href = `/delete_trainer/${trainerId}/`;
+    }
+}
 </script>
+
 {% endblock %}

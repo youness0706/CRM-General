@@ -4,52 +4,53 @@
 {% block title %}الرئيسية{% endblock %}
 
 {% block content %}
-<!-- CSRF Token for AJAX requests -->
 {% csrf_token %}
 
-<div class="container-fluid mt-3">
-    <h2>مرحبًا بكم في لوحة التحكم الرئيسية</h2>
-    
-    <!-- Quick Actions -->
-    <div class="row g-3">
-        <div class="col-12 col-sm-12 col-md-8 col-lg-4">
-            <button class="btn btn-outline-secondary w-100 py-3 rounded-3 border-2 fw-bold" onclick="copyLink()">
-                <i class="fas fa-link d-block mb-2 fa-lg"></i>
-                نسخ رابط إضافة طالب
+<div class="container-fluid px-4 py-4">
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <h2 class="mb-1 fw-bold text-dark">لوحة التحكم</h2>
+            <p class="text-muted mb-0" id="currentDate"></p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            
+            
+            <!-- Quick Action -->
+            <button class="btn btn-primary btn-sm shadow-sm" onclick="copyLink()">
+                <i class="fas fa-link me-2"></i>
+                رابط التسجيل
             </button>
         </div>
     </div>
     
-    <!-- Loading Indicator -->
-    <div id="loadingIndicator" class="text-center my-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">جاري التحميل...</span>
-        </div>
-        <p class="mt-3 text-muted">جاري تحميل البيانات...</p>
+    <!-- KPI Cards -->
+    <div class="row g-3 mb-4" id="kpiCards">
+        <!-- KPIs will be loaded here -->
     </div>
-    
+
     <!-- Charts Section -->
-    <div class="row" id="chartsSection" style="display: none;">
-        <div class="col-xl-8 col-lg-7">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold text-primary">تحليل الدخل حسب الفئة</h6>
+    <div class="row g-3 mb-4">
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="mb-0 fw-semibold">تحليل الدخل حسب الفئة</h6>
                 </div>
                 <div class="card-body">
-                    <div class="chart-container" style="position: relative; height:50vh; width:100%">
+                    <div class="chart-container" style="position: relative; height: 400px">
                         <canvas id="incomeByCategoryChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div class="col-xl-4 col-lg-5">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">المتدربون غير المدفوعين</h6>
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="mb-0 fw-semibold">المتدربون غير المدفوعين</h6>
                 </div>
                 <div class="card-body">
-                    <div class="chart-container" style="position: relative; height:45vh; width:100%">
+                    <div class="chart-container" style="position: relative; height: 400px">
                         <canvas id="unpaidTrainersChart"></canvas>
                     </div>
                 </div>
@@ -57,41 +58,45 @@
         </div>
     </div>
 
-    <!-- Bulk Actions Bar -->
-    <div class="row" id="bulkActionsBar" style="display: none;">
-        <div class="col-12">
-            <div class="card bg-warning text-dark mb-3">
-                <div class="card-body py-2">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>تم تحديد <span id="selectedCount">0</span> متدرب</strong>
-                        </div>
-                        <div>
-                            <button class="btn btn-danger btn-sm me-2" id="deactivateSelected">
-                                <i class="fas fa-user-slash"></i> إلغاء التفعيل
-                            </button>
-                            <button class="btn btn-secondary btn-sm" id="clearSelection">إلغاء التحديد</button>
-                        </div>
-                    </div>
+    <!-- Bulk Actions Bar (Sticky) -->
+    <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-check-circle"></i>
+                    <strong>تم تحديد <span id="selectedCount">0</span> متدرب</strong>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-danger" id="deactivateSelected">
+                        <i class="fas fa-user-slash me-1"></i>
+                        إلغاء التفعيل
+                    </button>
+                    <button class="btn btn-sm btn-light" id="clearSelection">
+                        إلغاء التحديد
+                    </button>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Payment Status Container -->
-    <div class="row" id="paymentStatusContainer">
+    <!-- Payment Status Cards -->
+    <div class="row g-3 mb-4" id="paymentStatusContainer">
         <!-- Dynamic content loaded via JS -->
     </div>
     
-    <!-- Paid Today Container -->
-    <div class="row ml-0">
-        <div class="col-md-12 col-sm-12 col-12 mb-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-gradient-success text-white py-3">
-                    <h6 class="m-0 font-weight-bold">الدين دفعوا اليوم</h6>
+    <!-- Paid Today Section -->
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        الدفعات اليوم
+                    </h6>
+                    <span class="badge bg-success rounded-pill" id="paidTodayCount">0</span>
                 </div>
-                <div class="card-body px-4">
-                    <div id="paidTodayContainer" class="list-group list-group-flush">
+                <div class="card-body p-0">
+                    <div id="paidTodayContainer">
                         <!-- Dynamic content loaded via JS -->
                     </div>
                 </div>
@@ -100,122 +105,371 @@
     </div>
 </div>
 
-<!-- Styles -->
 <style>
-.chart-container {
-    margin: auto;
-    max-height: 600px;
+:root {
+    --primary: #4e73df;
+    --success: #1cc88a;
+    --danger: #e74a3b;
+    --warning: #f6c23e;
+    --info: #36b9cc;
+    --gray-100: #f8f9fc;
+    --gray-200: #e3e6f0;
+    --gray-600: #858796;
+    --shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
 }
 
-.avatar-circle {
-    width: 40px;
-    height: 40px;
+body {
+    background-color: var(--gray-100);
+}
+
+/* KPI Cards */
+.kpi-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    border: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 4px;
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0.5rem 2rem 0 rgba(58, 59, 69, 0.2);
+}
+
+.kpi-card:hover::before {
+    width: 6px;
+}
+
+.kpi-card.income::before { background: var(--success); }
+.kpi-card.active::before { background: var(--primary); }
+.kpi-card.unpaid::before { background: var(--danger); }
+.kpi-card.expiring::before { background: var(--warning); }
+
+.kpi-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.kpi-text {
+    flex: 1;
+}
+
+.kpi-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+}
+
+.kpi-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.kpi-icon.income { background: rgba(28, 200, 138, 0.1); color: var(--success); }
+.kpi-icon.active { background: rgba(78, 115, 223, 0.1); color: var(--primary); }
+.kpi-icon.unpaid { background: rgba(231, 74, 59, 0.1); color: var(--danger); }
+.kpi-icon.expiring { background: rgba(246, 194, 62, 0.1); color: var(--warning); }
+
+/* Charts */
+.chart-container {
+    position: relative;
+}
+
+.card {
+    border: none;
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+/* Bulk Actions Bar */
+.bulk-actions-bar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #f6c23e 0%, #f4b619 100%);
+    color: #000;
+    padding: 1rem 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1020;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Payment Status Cards */
+.payment-status-card {
+    border-left: 4px solid var(--danger);
+}
+
+.trainer-item {
+    padding: 1rem;
+    border-bottom: 1px solid var(--gray-200);
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-decoration: none;
+    color: inherit;
+}
+
+.trainer-item:last-child {
+    border-bottom: none;
+}
+
+.trainer-item:hover {
+    background-color: var(--gray-100);
+}
+
+.trainer-checkbox {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.trainer-avatar {
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
+    font-weight: 600;
+    font-size: 1rem;
     color: #fff;
-    background-color: rgba(220, 53, 69, 0.1);
+    flex-shrink: 0;
 }
 
-.bg-gradient-danger {
-    background: linear-gradient(45deg, #dc3545, #ff6b6b);
+.trainer-info {
+    flex: 1;
+    min-width: 0;
 }
 
-.bg-gradient-success {
-    background: linear-gradient(45deg, #28a745, #5cb85c);
+.trainer-name {
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.95rem;
 }
 
-.bg-danger-light {
-    background-color: rgba(220, 53, 69, 0.1);
-    color: #dc3545;
+.trainer-meta {
+    font-size: 0.8rem;
+    color: var(--gray-600);
+    margin: 0;
 }
 
-.card {
-    transition: transform 0.2s ease-in-out;
+/* Empty States */
+.empty-state {
+    padding: 3rem 2rem;
+    text-align: center;
+    color: var(--gray-600);
 }
 
-.card:hover {
-    transform: translateY(-5px);
+.empty-state-icon {
+    font-size: 3rem;
+    opacity: 0.3;
+    margin-bottom: 1rem;
 }
 
-.list-group-item {
-    transition: background-color 0.2s ease-in-out;
+.empty-state-text {
+    font-size: 1rem;
+    font-weight: 500;
 }
 
-.list-group-item:hover {
-    background-color: rgba(0, 0, 0, 0.02);
+/* Loading Skeleton */
+.skeleton-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    min-height: 130px;
 }
 
-.form-check-input {
-    width: 1.2em;
-    height: 1.2em;
-}
-
-.trainer-checkbox:checked + .avatar-circle {
-    border: 2px solid #dc3545;
-}
-
-#bulkActionsBar {
-    position: sticky;
-    top: 0;
-    z-index: 1020;
-}
-
-.loading-overlay {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-@media (max-width: 768px) {
-    .chart-container {
-        height: 40vh !important;
-    }
-}
-
-/* Skeleton loading animation */
 .skeleton {
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 200% 100%;
-    animation: loading 1.5s infinite;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
 }
 
-@keyframes loading {
+@keyframes shimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
 }
+
+.skeleton-line {
+    height: 16px;
+    margin-bottom: 12px;
+}
+
+.skeleton-line.large {
+    height: 32px;
+    width: 70%;
+}
+
+.skeleton-line.small {
+    width: 40%;
+}
+
+/* Responsive */
+@media (max-width: 1199px) {
+    .chart-container {
+        height: 350px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .kpi-value {
+        font-size: 1.5rem;
+    }
+    
+    .chart-container {
+        height: 300px !important;
+    }
+    
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+    }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeInUp 0.4s ease;
+}
+
+/* Toast Notification */
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: transform 0.3s ease;
+    font-weight: 500;
+}
+
+.toast-notification.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast-notification.toast-success {
+    border-left: 4px solid var(--success);
+    color: var(--success);
+}
+
+.toast-notification.toast-error {
+    border-left: 4px solid var(--danger);
+    color: var(--danger);
+}
 </style>
 
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- Load main dashboard script -->
 <script src="{% static 'js/dashboard.js' %}"></script>
 
 <script>
+// Display current date
+const currentDate = new Date().toLocaleDateString('ar-MA', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+});
+document.getElementById('currentDate').textContent = currentDate;
+
 // Copy link functionality
 function copyLink() {
     const link = "{{ request.scheme }}://{{ request.get_host }}{% url 'addme' organization_slug %}";
+    
     navigator.clipboard.writeText(link).then(() => {
-        const toast = document.createElement('div');
-        toast.className = 'position-fixed top-0 start-50 translate-middle-x mt-4 alert alert-success alert-dismissible fade show shadow-lg rounded-4';
-        toast.style.zIndex = '9999';
-        toast.innerHTML = `
-            <i class="fas fa-check-circle me-2"></i>
-            تم نسخ الرابط بنجاح!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            if (toast.parentNode) {
-                toast.parentNode.removeChild(toast);
-            }
-        }, 3000);
+        showToast('تم نسخ الرابط بنجاح!', 'success');
     }).catch(() => {
-        alert("تم نسخ الرابط: " + link);
+        alert('الرابط: ' + link);
     });
 }
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} fa-lg"></i>
+        <span>${message}</span>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Make showToast globally available
+window.showToast = showToast;
 </script>
 {% endblock %}
