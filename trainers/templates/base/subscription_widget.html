@@ -59,20 +59,10 @@
             {% endwith %}
             
         {% elif org.subscription_status == 'expired' or org.is_expired %}
-            {# Expired #}
-            <div class="alert alert-danger alert-dismissible fade show mb-0 subscription-banner" role="alert">
-                <div class="container-fluid">
-                    <div class="row align-items-center">
-                        
-                        <div class="col">
-                            <strong>⚠️ الاشتراك منتهي!</strong> يرجى التجديد لمواصلة الخدمة
-                        </div>
-                        <div class="col-auto">
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {# Expired - Auto Redirect #}
+            <script>
+                window.location.href = '{% url "subscription_expired" %}';
+            </script>
         {% endif %}
         
         <style>

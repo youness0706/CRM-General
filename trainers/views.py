@@ -879,7 +879,7 @@ def subscription_status_view(request):
         'is_admin': request.staff.is_admin if request.staff else False,
     }
     
-    return render(request, 'admin/subscription_status.html', context)
+    return render(request, 'pages/subscription_expired.html', context)
 
 
 @login_required(login_url='/login/')

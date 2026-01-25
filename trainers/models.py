@@ -142,7 +142,7 @@ class OrganizationInfo(models.Model):
         return 0
     
     # Methods
-    def start_trial(self, trial_days=14):
+    def start_trial(self, trial_days=7):
         """Start a free trial period"""
         self.subscription_status = 'trial'
         self.trial_start = now().date()
