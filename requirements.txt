@@ -35,6 +35,7 @@ et_xmlfile==2.0.0
 filelock==3.16.1
 frozenlist==1.5.0
 cloudinary
+cloudinary_storage
 gunicorn==23.0.0
 h11==0.14.0
 httpcore==1.0.7
