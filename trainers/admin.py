@@ -296,7 +296,7 @@ class OrganizationInfoAdmin(admin.ModelAdmin):
     subscription_status_display.short_description = "حالة الاشتراك"
     
     def days_remaining_display(self, obj):
-        days = obj.days_until_expiration()
+        days = obj.days_until_expiration
         if days is None:
             return "-"
         elif days > 0:

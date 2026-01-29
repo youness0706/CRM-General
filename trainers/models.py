@@ -135,9 +135,12 @@ class OrganizationInfo(models.Model):
         if self.subscription_status == 'trial' and self.trial_end:
             delta = (self.trial_end - today).days
             return max(0, delta)
-        elif self.subscription_status == 'active' and self.subscription_end:
-            delta = (self.subscription_end - today).days
-            return max(0, delta)
+        elif self.subscription_status == 'active':
+            # Try subscription_end_date first, then fall back to subscription_end
+            end_date = self.subscription_end_date or self.subscription_end
+            if end_date:
+                delta = (end_date - today).days
+                return max(0, delta)
         
         return 0
     
@@ -147,10 +150,13 @@ class OrganizationInfo(models.Model):
         self.subscription_status = 'trial'
         self.trial_start = now().date()
         self.trial_end = self.trial_start + timedelta(days=trial_days)
+        # Also set subscription_end_date for consistency with expiration check logic
+        self.subscription_end_date = self.trial_end
         self.subscription_start = None
         self.subscription_end = None
         self.subscription_period = None
         self.last_payment_date = None
+        self.save()
     
     def activate_subscription(self, period, amount, user):
         """Activate a paid subscription"""
@@ -162,16 +168,18 @@ class OrganizationInfo(models.Model):
         # Set subscription dates
         self.subscription_status = 'active'
         self.subscription_start = today
+        self.subscription_start_date = today
         self.subscription_period = period
         self.last_payment_date = today
         
         # Calculate end date
-        
-
         if period == '1m':
             self.subscription_end = today + relativedelta(months=1)
         elif period == '3m':
             self.subscription_end = today + relativedelta(months=3)
+        
+        # Also set subscription_end_date for consistency
+        self.subscription_end_date = self.subscription_end
                 
         # Clear trial dates
         self.trial_start = None
@@ -203,32 +211,35 @@ class OrganizationInfo(models.Model):
                 self.subscription_status = 'expired'
                 self.save()
     
+    @property
     def days_until_expiration(self):
         """Calculate days remaining until subscription expires"""
-        if not self.subscription_end_date:
+        # Use subscription_end_date if available, otherwise fall back to subscription_end
+        end_date = self.subscription_end_date or self.subscription_end
+        
+        if not end_date:
             return None
         
         today = timezone.now().date()
-        delta = self.subscription_end_date - today
+        delta = end_date - today
         return delta.days
-
     def is_in_grace_period(self):
         """Check if organization is in grace period"""
-        days_left = self.days_until_expiration()
+        days_left = self.days_until_expiration
         if days_left is None:
             return False
         return 0 > days_left >= -self.grace_period_days
 
     def is_expired(self):
         """Check if subscription has expired (past grace period)"""
-        days_left = self.days_until_expiration()
+        days_left = self.days_until_expiration
         if days_left is None:
             return False
         return days_left < -self.grace_period_days
 
     def get_subscription_status_display(self):
         """Get human-readable subscription status with color coding"""
-        days_left = self.days_until_expiration()
+        days_left = self.days_until_expiration
         
         if days_left is None:
             return {
@@ -363,9 +374,10 @@ class OrganizationPayment(models.Model):
         # Save payment first
         super().save(*args, **kwargs)
         
-        # Update organization subscription dates
+        # Update organization subscription dates and status
         self.organization.subscription_start_date = self.subscription_start
         self.organization.subscription_end_date = self.subscription_end
+        self.organization.subscription_status = 'active'  # Set status to active when payment is processed
         self.organization.is_active = True
         self.organization.save()
     

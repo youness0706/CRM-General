@@ -33,7 +33,7 @@ class OrganizationMiddleware:
                 
                 # Get detailed subscription status
                 request.subscription_status = organization.get_subscription_status_display()
-                days_left = organization.days_until_expiration()
+                days_left = organization.days_until_expiration
                 
                 # Allowed URLs even when expired
                 allowed_urls = [

@@ -37,7 +37,7 @@ class Command(BaseCommand):
         
         for org in organizations:
             stats['total'] += 1
-            days_left = org.days_until_expiration()
+            days_left = org.days_until_expiration
             
             if days_left is None:
                 continue

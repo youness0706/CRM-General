@@ -58,8 +58,8 @@
                 {% endif %}
             {% endwith %}
             
-        {% elif org.subscription_status == 'expired' or org.is_expired %}
-            {# Expired - Auto Redirect #}
+        {% elif org.subscription_status == 'expired' and org.days_until_expiration <= -7 %}
+            {# Expired (past grace period) - Auto Redirect #}
             <script>
                 window.location.href = '{% url "subscription_expired" %}';
             </script>

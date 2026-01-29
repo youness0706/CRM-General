@@ -851,7 +851,7 @@ def subscription_status_view(request):
     organization = request.organization
     
     # Get subscription details
-    days_left = organization.days_until_expiration()
+    days_left = organization.days_until_expiration
     subscription_status = organization.get_subscription_status_display()
     
     # Get payment history
@@ -919,7 +919,7 @@ def subscription_renew_view(request):
 
 الحالة الحالية:
 - تاريخ الانتهاء: {organization.subscription_end_date}
-- الأيام المتبقية: {organization.days_until_expiration()}
+- الأيام المتبقية: {organization.days_until_expiration}
 
 يرجى التواصل مع الجمعية لإتمام عملية التجديد.
                 """,
@@ -997,7 +997,7 @@ def subscription_status_api(request):
     """
     organization = request.organization
     
-    days_left = organization.days_until_expiration()
+    days_left = organization.days_until_expiration
     status = organization.get_subscription_status_display()
     
     return JsonResponse({
