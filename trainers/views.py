@@ -1318,8 +1318,8 @@ def login_view(request):
             login(request, user)
             
             # Handle "Remember Me" checkbox
-            remember_me = request.POST.get('remember_me') == 'on'
-            if remember_me:
+           
+            if 'remember_me' in request.POST:
                 # Set session to persist for 30 days
                 request.session.set_expiry(30 * 24 * 60 * 60)  # 30 days in seconds
             else:
