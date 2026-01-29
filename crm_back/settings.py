@@ -252,15 +252,7 @@ CSRF_TRUSTED_ORIGINS = [
     # 'https://yourdomain.com',
 ]
 
-# Cache Settings (for dashboard performance)
-# Development - use dummy cache
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
-        'TIMEOUT': 300,  # 5 minutes
-    }
-}
+
 
 # Production - use Redis (uncomment when ready)
 # CACHES = {
