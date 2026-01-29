@@ -12,7 +12,6 @@ urlpatterns = [
     path('edit_trainee/<int:id>', views.edit_trainee, name='edit_trainee'),
     path("delete_trainer/<int:id>/", views.delete_trainer_view, name="delete_trainer"),
     #payments
-    path('add_payment', views.add_payment, name='add_payment'),
     path('added_payment/', views.added_payment, name='added_payment'),
     path('added_payments_history/', views.added_payments_history, name='added_payments_history'),
     path('delete_pay/<int:id>', views.delete_pay, name='delete_pay'),

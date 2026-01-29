@@ -57,6 +57,10 @@ body {
     width: 100% !important;
 }
 
+.select2-container--bootstrap-5 .select2-selection {
+    min-height: 38px;
+}
+
 .success-message {
     display: none;
     padding: 15px;
@@ -75,6 +79,12 @@ body {
     border: 1px solid #f5c6cb;
     border-radius: 5px;
     color: #721c24;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
 }
 </style>
 
@@ -97,9 +107,9 @@ body {
         <div class="mb-3">
             <label for="trainer" class="form-label">المتدرب: *</label>
             <select name="trainer" id="trainer" class="form-control" required>
-                <option value="" disabled selected>اختر المتدرب</option>
+                <option value="" disabled selected>ابحث عن المتدرب...</option>
             </select>
-            <small class="form-text text-muted">ابحث عن المتدرب بالاسم</small>
+            <small class="form-text text-muted">ابدأ الكتابة للبحث عن المتدرب بالاسم</small>
         </div>
 
         <div class="mb-3">
@@ -147,142 +157,12 @@ body {
     </div>
 </div>
 
-<!-- Scripts -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% block extra_js %}
+<!-- Load jQuery first -->
+<!-- Load Select2 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 
 <script>
-class PaymentFormManager {
-    constructor() {
-        this.form = document.getElementById('paymentForm');
-        this.submitBtn = document.getElementById('submitBtn');
-        this.init();
-    }
-
-    init() {
-        // Initialize Select2 for trainer selection with AJAX
-        $('#trainer').select2({
-            theme: 'bootstrap-5',
-            placeholder: 'ابحث عن المتدرب...',
-            dir: 'rtl',
-            language: 'ar',
-            allowClear: true,
-            minimumInputLength: 0,
-            ajax: {
-                url: '/api/trainers-for-payment/',
-                dataType: 'json',
-                delay: 250,
-                data: function(params) {
-                    return {
-                        search: params.term,
-                        page: params.page || 1
-                    };
-                },
-                processResults: function(data) {
-                    return {
-                        results: data.results,
-                        pagination: {
-                            more: data.pagination.more
-                        }
-                    };
-                },
-                cache: true
-            }
-        });
-
-        // Set default date to today
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('paymentdate').value = today;
-
-        // Form submission
-        this.form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleSubmit();
-        });
-    }
-
-    async handleSubmit() {
-        // Validate form
-        if (!this.form.checkValidity()) {
-            this.form.reportValidity();
-            return;
-        }
-
-        // Disable submit button
-        this.submitBtn.disabled = true;
-        document.getElementById('submitText').style.display = 'none';
-        document.getElementById('submitSpinner').style.display = 'inline';
-
-        // Hide previous messages
-        document.getElementById('successMessage').style.display = 'none';
-        document.getElementById('errorMessage').style.display = 'none';
-
-        try {
-            const formData = new FormData(this.form);
-            
-            const response = await fetch('{% url "add_payment" %}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-
-            if (response.redirected) {
-                // Successfully saved, redirect
-                window.location.href = response.url;
-                return;
-            }
-
-            const data = await response.json();
-
-            if (data.success === false) {
-                throw new Error(data.error);
-            }
-
-            // Show success message
-            document.getElementById('successMessage').style.display = 'block';
-            
-            // Reset form
-            this.form.reset();
-            $('#trainer').val(null).trigger('change');
-            
-            // Set date back to today
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('paymentdate').value = today;
-
-            // Scroll to top
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-
-            // Redirect after 2 seconds
-            setTimeout(() => {
-                window.location.href = '{% url "added_payment" %}';
-            }, 2000);
-
-        } catch (error) {
-            console.error('Error:', error);
-            
-            // Show error message
-            document.getElementById('errorText').textContent = error.message || 'حدث خطأ أثناء إضافة الدفع';
-            document.getElementById('errorMessage').style.display = 'block';
-            
-            // Scroll to top
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        } finally {
-            // Re-enable submit button
-            this.submitBtn.disabled = false;
-            document.getElementById('submitText').style.display = 'inline';
-            document.getElementById('submitSpinner').style.display = 'none';
-        }
-    }
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', () => {
-    new PaymentFormManager();
-});
-
 // Arabic translations for Select2
 $.fn.select2.amd.define('select2/i18n/ar', [], function() {
     return {
@@ -293,7 +173,7 @@ $.fn.select2.amd.define('select2/i18n/ar', [], function() {
             return 'الرجاء حذف ' + (args.input.length - args.maximum) + ' عناصر';
         },
         inputTooShort: function(args) {
-            return 'الرجاء إضافة ' + (args.minimum - args.input.length) + ' عناصر';
+            return 'الرجاء إضافة ' + (args.minimum - args.input.length) + ' عناصر أو أكثر';
         },
         loadingMore: function() {
             return 'جاري تحميل نتائج إضافية...';
@@ -306,9 +186,112 @@ $.fn.select2.amd.define('select2/i18n/ar', [], function() {
         },
         searching: function() {
             return 'جاري البحث…';
+        },
+        removeAllItems: function() {
+            return 'قم بإزالة كل العناصر';
         }
     };
 });
-</script>
 
+// Guard against multiple declarations (e.g., browser extensions or double-includes)
+if (typeof window.PaymentFormManager === 'undefined') {
+    (function() {
+        class PaymentFormManager {
+            constructor() {
+                this.form = document.getElementById('paymentForm');
+                this.submitBtn = document.getElementById('submitBtn');
+                this.trainerSelect = $('#trainer');
+                this.init();
+            }
+
+            init() {
+                console.log('Initializing PaymentFormManager');
+                this.initSelect2();
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('paymentdate').value = today;
+                this.form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleSubmit();
+                });
+            }
+
+            initSelect2() {
+                console.log('Initializing Select2');
+                this.trainerSelect.select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'ابحث عن المتدرب...',
+                    dir: 'rtl',
+                    language: 'ar',
+                    allowClear: true,
+                    minimumInputLength: 0,
+                    width: '100%',
+                    ajax: {
+                        url: '{% url "api_trainers_for_payment" %}',
+                        dataType: 'json',
+                        delay: 250,
+                        data: function(params) {
+                            return { search: params.term || '', page: params.page || 1 };
+                        },
+                        processResults: function(data, params) {
+                            params.page = params.page || 1;
+                            if (!data.results) return { results: [], pagination: { more: false } };
+                            return { results: data.results, pagination: { more: data.pagination && data.pagination.more } };
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('AJAX Error:', { status: xhr.status, statusText: xhr.statusText, error: error, response: xhr.responseText });
+                        },
+                        cache: true
+                    },
+                    templateResult: function(trainer) { return trainer.loading ? trainer.text : trainer.text; },
+                    templateSelection: function(trainer) { return trainer.text; }
+                });
+
+                this.trainerSelect.on('select2:select', function(e) { console.log('Trainer selected:', e.params.data); });
+                this.trainerSelect.on('select2:open', function() { setTimeout(function() { const f = document.querySelector('.select2-search__field'); if (f) f.focus(); }, 100); });
+                this.trainerSelect.on('select2:error', function(e) { console.error('Select2 error event:', e); });
+            }
+
+            async handleSubmit() {
+                console.log('Form submitted');
+                if (!this.form.checkValidity()) { this.form.reportValidity(); return; }
+                const trainerValue = this.trainerSelect.val();
+                if (!trainerValue) { this.showError('الرجاء اختيار المتدرب'); return; }
+                this.submitBtn.disabled = true; document.getElementById('submitText').style.display = 'none'; document.getElementById('submitSpinner').style.display = 'inline'; this.hideMessages();
+                try {
+                    const formData = new FormData(this.form);
+                    const response = await fetch('{% url "add_payment" %}', { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    if (response.redirected) { window.location.href = response.url; return; }
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const data = await response.json();
+                        if (data.success === false) throw new Error(data.error || 'حدث خطأ أثناء إضافة الدفع');
+                        this.showSuccess(); setTimeout(() => { window.location.href = '{% url "payments_history" %}'; }, 1500);
+                    } else { throw new Error('حدث خطأ غير متوقع'); }
+                } catch (error) { console.error('Submit error:', error); this.showError(error.message || 'حدث خطأ أثناء إضافة الدفع'); }
+                finally { this.submitBtn.disabled = false; document.getElementById('submitText').style.display = 'inline'; document.getElementById('submitSpinner').style.display = 'none'; }
+            }
+
+            showSuccess() { document.getElementById('successMessage').style.display = 'block'; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+            showError(message) { document.getElementById('errorText').textContent = message; document.getElementById('errorMessage').style.display = 'block'; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+            hideMessages() { document.getElementById('successMessage').style.display = 'none'; document.getElementById('errorMessage').style.display = 'none'; }
+        }
+
+        // export class to window and initialize once
+        window.PaymentFormManager = PaymentFormManager;
+        if (!window._paymentFormManagerInitialized) {
+            window._paymentFormManagerInitialized = true;
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => new window.PaymentFormManager()); else new window.PaymentFormManager();
+        }
+    })();
+} else {
+    // If class already exists, ensure a single instance is created
+    if (!window._paymentFormManagerInitialized) {
+        window._paymentFormManagerInitialized = true;
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => new window.PaymentFormManager()); else new window.PaymentFormManager();
+    } else {
+        console.log('PaymentFormManager already initialized');
+    }
+}
+</script>
+{% endblock %}
 {% endblock %}

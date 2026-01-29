@@ -89,9 +89,6 @@ p, .card-title, .card-text {
                             <a href="{% url 'edit_trainee' trainer_id %}" class="btn ml-2 btn-primary">
                                 <i class="fas fa-edit"></i> تعديل
                             </a>
-                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
-                                إضافة دفعة
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -108,59 +105,6 @@ p, .card-title, .card-text {
                     </div>
                 </div>
 
-                <!-- Add Payment Modal -->
-                <div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="addPaymentModalLabel">
-                                    <i class="fas fa-money-bill-wave me-2"></i>إضافة دفعة
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
-                            </div>
-                            <form id="addPaymentForm">
-                                {% csrf_token %}
-                                <div class="modal-body">
-                                    <div class="mb-3">
-                                        <label for="paymentdate" class="form-label">تاريخ الدفع:</label>
-                                        <input type="date" name="paymentdate" id="paymentdate" class="form-control" required>
-                                    </div>
-                            
-                                    <div class="mb-3">
-                                        <label class="form-label">فئة الدفع:</label>
-                                        <div class="form-check">
-                                            <input type="checkbox" name="category" value="month" class="form-check-input" id="month">
-                                            <label class="form-check-label mr-4" for="month">شهرية</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input type="checkbox" name="category" value="subscription" class="form-check-input" id="subscription">
-                                            <label class="form-check-label mr-4" for="subscription">انخراط</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input type="checkbox" name="category" value="assurance" class="form-check-input" id="assurance">
-                                            <label class="form-check-label mr-4" for="assurance">التأمين</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input type="checkbox" name="category" value="jawaz" class="form-check-input" id="jawaz">
-                                            <label class="form-check-label mr-4" for="jawaz">جواز</label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                                    <button type="submit" class="btn btn-primary" id="submitPaymentBtn">
-                                        <span id="submitPaymentText">إضافة</span>
-                                        <span id="submitPaymentSpinner" style="display: none;">
-                                            <span class="spinner-border spinner-border-sm me-2"></span>
-                                            جاري الحفظ...
-                                        </span>
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Payment Status Cards -->
                 <div id="jawazPaymentsContainer"></div>
                 <div id="assurancePaymentsContainer"></div>
@@ -170,9 +114,6 @@ p, .card-title, .card-text {
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>حالة الدفع الأشهر</h5>
-                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
-                            إضافة دفعة
-                        </button>
                     </div>
                     <div class="card-body">
                         <p class="mb-4">
@@ -271,10 +212,6 @@ class TrainerProfileManager {
     }
 
     async init() {
-        // Set today's date in payment form
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('paymentdate').value = today;
-
         // Setup event listeners
         this.setupEventListeners();
 
@@ -283,12 +220,6 @@ class TrainerProfileManager {
     }
 
     setupEventListeners() {
-        // Add payment form
-        document.getElementById('addPaymentForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleAddPayment();
-        });
-
         // Upload document form
         document.getElementById('uploadDocumentForm').addEventListener('submit', (e) => {
             e.preventDefault();
@@ -562,64 +493,6 @@ class TrainerProfileManager {
                 `).join('')}
             </div>
         `;
-    }
-
-    async handleAddPayment() {
-        const form = document.getElementById('addPaymentForm');
-        const formData = new FormData(form);
-        
-        const categories = formData.getAll('category');
-        const date = formData.get('paymentdate');
-
-        if (categories.length === 0) {
-            this.showToast('يرجى تحديد فئة دفع واحدة على الأقل', 'warning');
-            return;
-        }
-
-        const submitBtn = document.getElementById('submitPaymentBtn');
-        submitBtn.disabled = true;
-        document.getElementById('submitPaymentText').style.display = 'none';
-        document.getElementById('submitPaymentSpinner').style.display = 'inline';
-
-        try {
-            const response = await fetch(`/api/trainer/${this.trainerId}/add-payment/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': this.getCSRFToken()
-                },
-                body: JSON.stringify({
-                    categories: categories,
-                    date: date
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                this.showToast(data.message, 'success');
-                
-                // Reload profile data
-                await this.loadProfileData();
-                
-                // Close modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('addPaymentModal'));
-                modal.hide();
-                
-                // Reset form
-                form.reset();
-                document.getElementById('paymentdate').value = new Date().toISOString().split('T')[0];
-            } else {
-                this.showToast(data.error, 'danger');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            this.showToast('حدث خطأ أثناء إضافة الدفعة', 'danger');
-        } finally {
-            submitBtn.disabled = false;
-            document.getElementById('submitPaymentText').style.display = 'inline';
-            document.getElementById('submitPaymentSpinner').style.display = 'none';
-        }
     }
 
     async handleUploadDocument() {

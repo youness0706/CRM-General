@@ -32,6 +32,7 @@ def payments_history(request):
 
 
 @login_required
+@require_organization
 @require_http_methods(["GET"])
 def api_payments_list(request):
     """
@@ -110,6 +111,7 @@ def api_payments_list(request):
 
 
 @login_required
+@require_organization
 @require_http_methods(["POST"])
 def api_bulk_delete_payments(request):
     """
@@ -158,6 +160,173 @@ def api_bulk_delete_payments(request):
         }, status=500)
 
 
+# ==================== ADD PAYMENT ====================
+
+@login_required
+@require_organization
+def add_payment(request):
+    """
+    Shell view for add payment form
+    Trainers loaded via AJAX for better performance
+    """
+    if request.method == 'POST':
+        return handle_add_payment_post(request)
+    
+    context = {
+        'organization_slug': request.organization.slug,
+    }
+    return render(request, 'pages/add_payment.html', context)
+
+
+@login_required
+@require_organization
+def handle_add_payment_post(request):
+    """Handle payment creation"""
+    organization = request.organization
+    
+    try:
+        trainer_id = request.POST.get('trainer')
+        paymentdate = request.POST.get('paymentdate')
+        paymentCategry = request.POST.get('paymentCategry')
+        paymentAmount = request.POST.get('paymentAmount')
+        
+        # Validate required fields
+        if not all([trainer_id, paymentdate, paymentCategry, paymentAmount]):
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': 'جميع الحقول مطلوبة'
+                }, status=400)
+            return redirect('add_payment')
+        
+        # Validate trainer exists
+        try:
+            trainer = Trainer.objects.get(
+                id=trainer_id, 
+                organization=organization
+            )
+        except Trainer.DoesNotExist:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': 'المتدرب غير موجود'
+                }, status=404)
+            return redirect('add_payment')
+        
+        # Validate payment amount
+        try:
+            amount = Decimal(paymentAmount)
+            if amount < 0:
+                raise ValueError('المبلغ يجب أن يكون موجباً')
+        except (ValueError, Decimal.InvalidOperation) as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': 'مبلغ الدفع غير صالح'
+                }, status=400)
+            return redirect('add_payment')
+        
+        # Create payment
+        payment = Payments(
+            organization=organization,
+            trainer=trainer,
+            paymentdate=paymentdate,
+            paymentCategry=paymentCategry,
+            paymentAmount=amount
+        )
+        payment.save()
+        
+        # Clear financial cache
+        today = timezone.now().date()
+        cache_keys = [
+            f'financial_summary_{organization.id}_{today}',
+            f'chart_data_{organization.id}_{today}',
+        ]
+        cache.delete_many(cache_keys)
+        
+        # Return success
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'payment_id': payment.id,
+                'message': 'تم إضافة الدفع بنجاح'
+            })
+        
+        # Redirect to payments history
+        return redirect('payments_history')
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': f'حدث خطأ: {str(e)}'
+            }, status=500)
+        return redirect('add_payment')
+
+
+@login_required
+@require_organization
+@require_http_methods(["GET"])
+def api_trainers_for_payment(request):
+    """
+    JSON API: Get active trainers for payment form
+    Optimized with pagination and search
+    Returns data in Select2 format
+    """
+    try:
+        organization = request.organization
+        search = request.GET.get('search', '').strip()
+        page = int(request.GET.get('page', 1))
+        per_page = 50
+        
+        # Base query - only active trainers
+        trainers = Trainer.objects.filter(
+            organization=organization,
+            is_active=True
+        ).only('id', 'first_name', 'last_name').order_by('first_name', 'last_name')
+        
+        # Search filter
+        if search:
+            trainers = trainers.filter(
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search)
+            )
+        
+        # Calculate pagination
+        start = (page - 1) * per_page
+        end = start + per_page
+        total_count = trainers.count()
+        trainers_page = list(trainers[start:end])
+        
+        # Build response in Select2 format
+        trainers_data = [
+            {
+                'id': trainer.id,
+                'text': f"{trainer.first_name} {trainer.last_name}"
+            }
+            for trainer in trainers_page
+        ]
+        
+        return JsonResponse({
+            'results': trainers_data,
+            'pagination': {
+                'more': end < total_count
+            }
+        })
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'results': [],
+            'pagination': {'more': False},
+            'error': str(e)
+        }, status=500)
+
+
 # ==================== FINANCIAL STATUS ====================
 
 @login_required
@@ -173,7 +342,96 @@ def finantial_status(request):
     return render(request, 'pages/finantial_status.html', context)
 
 
+# ==================== HELPER FUNCTIONS ====================
+
+def calculate_rent(organization, start_date, end_date, today):
+    """Calculate rent expenses within date range"""
+    if not organization.datepay or not organization.rent_amount:
+        return {'expected': 0, 'paid': 0, 'remaining': 0}
+    
+    expected_rent = Decimal('0.0')
+    rent_date = organization.datepay
+    
+    while rent_date <= end_date:
+        if rent_date >= start_date:
+            expected_rent += organization.rent_amount
+        # Move to next month
+        days_in_month = monthrange(rent_date.year, rent_date.month)[1]
+        rent_date += timedelta(days=days_in_month)
+    
+    # Costs tagged as rent (if you have such a field)
+    # For now, we'll assume all rent is expected but not tracked separately
+    paid_rent = Decimal('0.0')
+    
+    return {
+        'expected': float(expected_rent),
+        'paid': float(paid_rent),
+        'remaining': float(expected_rent - paid_rent)
+    }
+
+
+def calculate_staff_salaries(organization, start_date, end_date, today):
+    """Calculate staff salary expenses within date range"""
+    staff_members = Staff.objects.filter(organization=organization)
+    
+    expected_salaries = Decimal('0.0')
+    
+    for staff in staff_members:
+        salary_date = staff.started.replace(day=1) if hasattr(staff.started, 'replace') else staff.started
+        
+        while salary_date <= end_date:
+            if salary_date >= start_date:
+                expected_salaries += staff.salary
+            # Move to next month
+            if salary_date.month == 12:
+                salary_date = salary_date.replace(year=salary_date.year + 1, month=1)
+            else:
+                salary_date = salary_date.replace(month=salary_date.month + 1)
+    
+    # Assume salaries are expected but tracking paid separately would require a Costs entry
+    paid_salaries = Decimal('0.0')
+    
+    return {
+        'expected': float(expected_salaries),
+        'paid': float(paid_salaries),
+        'remaining': float(expected_salaries - paid_salaries)
+    }
+
+
+def get_payments_summary(organization, start_date, end_date):
+    """Get payments summary within date range"""
+    payments = Payments.objects.filter(
+        organization=organization,
+        paymentdate__range=[start_date, end_date]
+    ).aggregate(
+        total=Sum('paymentAmount'),
+        count=Count('id')
+    )
+    
+    return {
+        'total': float(payments['total'] or 0),
+        'count': payments['count'] or 0
+    }
+
+
+def get_costs_summary(organization, start_datetime, end_datetime):
+    """Get costs summary within date range"""
+    costs = Costs.objects.filter(
+        organization=organization,
+        date__range=[start_datetime, end_datetime]
+    ).aggregate(
+        total=Sum('amount'),
+        count=Count('id')
+    )
+    
+    return {
+        'total': float(costs['total'] or 0),
+        'count': costs['count'] or 0
+    }
+
+
 @login_required
+@require_organization
 @require_http_methods(["GET"])
 def api_financial_report(request):
     """
@@ -216,79 +474,76 @@ def api_financial_report(request):
             organization, start_date, end_date
         )
         
-        # Get costs data (pass datetime objects)
+        # Get costs data
         costs_data = get_costs_summary(
             organization, start_datetime, end_datetime
         )
         
+        # Get additional payments
+        addedpay_data = Addedpay.objects.filter(
+            organization=organization,
+            date__range=[start_datetime, end_datetime]
+        ).aggregate(
+            total=Sum('amount'),
+            count=Count('id')
+        )
+        
         # Get articles data
-        articles_data = get_articles_summary(
-            organization, start_date, end_date
+        articles_data = Article.objects.filter(
+            organization=organization,
+            date__range=[start_date, end_date]
+        ).aggregate(
+            income=Sum('participetion_price'),
+            costs=Sum('costs'),
+            count=Count('id')
         )
         
-        # Get added payments (pass datetime objects)
-        added_payments_data = get_added_payments_summary(
-            organization, start_datetime, end_datetime
-        )
-        
-        # Calculate totals (all values are now floats, so this is safe)
-        total_costs = (
-            costs_data['total'] + 
-            articles_data['total_costs'] + 
-            rent_data['total'] + 
-            staff_data['total']
-        )
-        
+        # Calculate totals
         total_income = (
-            payments_data['total'] + 
-            added_payments_data['total'] + 
-            articles_data['total_profit']
+            payments_data['total'] +
+            float(addedpay_data['total'] or 0) +
+            float(articles_data['income'] or 0)
         )
         
-        net_profit = total_income - total_costs
+        total_expenses = (
+            costs_data['total'] +
+            float(articles_data['costs'] or 0) +
+            rent_data['expected'] +
+            staff_data['expected']
+        )
         
-        # Build response
+        net_profit = total_income - total_expenses
+        
         response_data = {
-            'date_range': {
-                'start': start,
-                'end': end
-            },
+            'success': True,
             'summary': {
-                'total_income': float(total_income),
-                'total_costs': float(total_costs),
-                'net_profit': float(net_profit)
+                'total_income': round(total_income, 2),
+                'total_expenses': round(total_expenses, 2),
+                'net_profit': round(net_profit, 2),
             },
             'income': {
-                'payments': {
-                    'total': float(payments_data['total']),
-                    'by_category': payments_data['by_category']
+                'payments': payments_data,
+                'added_payments': {
+                    'total': float(addedpay_data['total'] or 0),
+                    'count': addedpay_data['count'] or 0
                 },
                 'articles': {
-                    'total': float(articles_data['total_profit']),
-                    'count': articles_data['count']
-                },
-                'added_payments': {
-                    'total': float(added_payments_data['total']),
-                    'items': added_payments_data['items']
+                    'total': float(articles_data['income'] or 0),
+                    'count': articles_data['count'] or 0
                 }
             },
             'expenses': {
-                'rent': {
-                    'total': float(rent_data['total']),
-                    'months': rent_data['count']
+                'costs': costs_data,
+                'articles_costs': {
+                    'total': float(articles_data['costs'] or 0),
+                    'count': articles_data['count'] or 0
                 },
-                'staff': {
-                    'total': float(staff_data['total']),
-                    'members': staff_data['members']
-                },
-                'articles': {
-                    'total': float(articles_data['total_costs']),
-                    'count': articles_data['count']
-                },
-                'costs': {
-                    'total': float(costs_data['total']),
-                    'items': costs_data['items']
-                }
+                'rent': rent_data,
+                'salaries': staff_data
+            },
+            'date_range': {
+                'start': start,
+                'end': end
             }
         }
         
@@ -298,326 +553,16 @@ def api_financial_report(request):
         return JsonResponse(response_data)
         
     except Exception as e:
+        import traceback
         return JsonResponse({
             'success': False,
-            'error': str(e)
+            'error': str(e),
+            'traceback': traceback.format_exc()
         }, status=500)
 
-
-# ==================== HELPER FUNCTIONS ====================
-
-def calculate_rent(organization, start_date, end_date, today):
-    """Calculate rent payments for the period"""
-    rent_total = 0.0
-    rent_count = 0
-    
-    if organization.datepay and organization.rent_amount:
-        current_date = organization.datepay
-        
-        while current_date <= end_date and current_date <= today:
-            if current_date >= start_date:
-                rent_count += 1
-            # Move to next month
-            days_in_month = monthrange(current_date.year, current_date.month)[1]
-            current_date += timedelta(days=days_in_month)
-        
-        # Ensure float calculation
-        rent_total = float(rent_count * organization.rent_amount)
-    
-    return {
-        'total': rent_total,
-        'count': rent_count
-    }
-
-
-def calculate_staff_salaries(organization, start_date, end_date, today):
-    """Calculate staff salaries for the period"""
-    staff_members = Staff.objects.filter(organization=organization).select_related('user')
-    
-    staff_list = []
-    staff_total = 0.0
-    
-    for staff_member in staff_members:
-        current_date = staff_member.started
-        pay_count = 0
-        
-        while current_date <= end_date and current_date <= today:
-            if current_date >= start_date:
-                pay_count += 1
-            
-            # Move to next month
-            if current_date.month == 12:
-                current_date = current_date.replace(
-                    year=current_date.year + 1, 
-                    month=1
-                )
-            else:
-                days_in_month = monthrange(current_date.year, current_date.month)[1]
-                current_date += timedelta(days=days_in_month)
-        
-        # Ensure float calculation
-        total_salary = float(pay_count * staff_member.salary)
-        
-        if total_salary > 0:
-            staff_total += total_salary
-            staff_list.append({
-                'name': staff_member.user.username,
-                'months': pay_count,
-                'total': total_salary
-            })
-    
-    return {
-        'total': staff_total,
-        'members': staff_list
-    }
-
-
-def get_payments_summary(organization, start_date, end_date):
-    """Get payments summary with optimized query"""
-    # Get total payment amount
-    total_amount = Payments.objects.filter(
-        organization=organization,
-        paymentdate__range=[start_date, end_date]
-    ).aggregate(total=Sum('paymentAmount'))['total']
-    
-    # Convert to float, default to 0.0 if None
-    total_amount = float(total_amount) if total_amount is not None else 0.0
-    
-    # Count unique trainers who paid by category
-    big_count = Payments.objects.filter(
-        organization=organization,
-        paymentdate__range=[start_date, end_date],
-        trainer__category='كبار'
-    ).values('trainer').distinct().count()
-    
-    med_count = Payments.objects.filter(
-        organization=organization,
-        paymentdate__range=[start_date, end_date],
-        trainer__category='شبان'
-    ).values('trainer').distinct().count()
-    
-    small_count = Payments.objects.filter(
-        organization=organization,
-        paymentdate__range=[start_date, end_date],
-        trainer__category='الصغار'
-    ).values('trainer').distinct().count()
-    
-    women_count = Payments.objects.filter(
-        organization=organization,
-        paymentdate__range=[start_date, end_date],
-        trainer__category='نساء'
-    ).values('trainer').distinct().count()
-    
-    return {
-        'total': total_amount,
-        'by_category': {
-            'big': big_count,
-            'med': med_count,
-            'small': small_count,
-            'women': women_count
-        }
-    }
-
-
-def get_costs_summary(organization, start_datetime, end_datetime):
-    """Get costs summary - accepts timezone-aware datetime objects"""
-    costs = Costs.objects.filter(
-        organization=organization,
-        date__range=[start_datetime, end_datetime]
-    ).values('cost', 'desc', 'amount', 'date')
-    
-    costs_list = []
-    total = 0.0
-    
-    for cost in costs:
-        amount = float(cost['amount'])
-        total += amount
-        costs_list.append({
-            'title': cost['cost'],
-            'description': cost['desc'],
-            'amount': amount,
-            'date': cost['date'].strftime('%Y-%m-%d')
-        })
-    
-    return {
-        'total': total,
-        'items': costs_list
-    }
-
-
-def get_articles_summary(organization, start_date, end_date):
-    """Get articles/events summary"""
-    articles = Article.objects.filter(
-        organization=organization,
-        date__range=[start_date, end_date]
-    ).aggregate(
-        total_costs=Sum('costs'),
-        total_profit=Sum('participetion_price'),
-        count=Count('id')
-    )
-    
-    # Convert Decimal to float, default to 0.0 if None
-    total_costs = float(articles['total_costs']) if articles['total_costs'] is not None else 0.0
-    total_profit = float(articles['total_profit']) if articles['total_profit'] is not None else 0.0
-    
-    return {
-        'total_costs': total_costs,
-        'total_profit': total_profit,
-        'count': articles['count']
-    }
-
-
-def get_added_payments_summary(organization, start_datetime, end_datetime):
-    """Get additional payments summary - accepts timezone-aware datetime objects"""
-    added_payments = Addedpay.objects.filter(
-        organization=organization,
-        date__range=[start_datetime, end_datetime]
-    ).values('title', 'desc', 'amount', 'date')
-    
-    payments_list = []
-    total = 0.0
-    
-    for payment in added_payments:
-        amount = float(payment['amount'])
-        total += amount
-        payments_list.append({
-            'title': payment['title'],
-            'description': payment['desc'],
-            'amount': amount,
-            'date': payment['date'].strftime('%Y-%m-%d')
-        })
-    
-    return {
-        'total': total,
-        'items': payments_list
-    }
-
-
-# ==================== ADD PAYMENT ====================
 
 @login_required
 @require_organization
-def add_payment(request):
-    """
-    Shell view for add payment form
-    Trainers loaded via AJAX for better performance
-    """
-    if request.method == 'POST':
-        return handle_add_payment_post(request)
-    
-    context = {
-        'organization_slug': request.organization.slug,
-    }
-    return render(request, 'pages/add_payment.html', context)
-
-
-def handle_add_payment_post(request):
-    """Handle payment creation"""
-    organization = request.organization
-    
-    try:
-        trainer_id = request.POST.get('trainer')
-        paymentdate = request.POST.get('paymentdate')
-        paymentCategry = request.POST.get('paymentCategry')
-        paymentAmount = request.POST.get('paymentAmount')
-        
-        # Validate
-        if not all([trainer_id, paymentdate, paymentCategry, paymentAmount]):
-            return JsonResponse({
-                'success': False,
-                'error': 'جميع الحقول مطلوبة'
-            }, status=400)
-        
-        trainer = Trainer.objects.get(
-            id=trainer_id, 
-            organization=organization
-        )
-        
-        payment = Payments(
-            organization=organization,
-            trainer=trainer,
-            paymentdate=paymentdate,
-            paymentCategry=paymentCategry,
-            paymentAmount=paymentAmount
-        )
-        payment.save()
-        
-        # Clear cache
-        today = timezone.now().date()
-        cache_keys = [
-            f'financial_summary_{organization.id}_{today}',
-            f'chart_data_{organization.id}_{today}',
-            # Clear financial report cache for all date ranges
-            f'financial_report_{organization.id}_*',
-        ]
-        cache.delete_many(cache_keys)
-        
-        return redirect('added_payment')
-        
-    except Trainer.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': 'المتدرب غير موجود'
-        }, status=404)
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-
-@login_required
-@require_http_methods(["GET"])
-def api_trainers_for_payment(request):
-    """
-    JSON API: Get active trainers for payment form
-    Optimized with pagination and search
-    """
-    organization = request.organization
-    search = request.GET.get('search', '').strip()
-    page = int(request.GET.get('page', 1))
-    per_page = 50
-    
-    # Base query
-    trainers = Trainer.objects.filter(
-        organization=organization,
-        is_active=True
-    ).only('id', 'first_name', 'last_name')
-    
-    # Search filter
-    if search:
-        trainers = trainers.filter(
-            Q(first_name__icontains=search) |
-            Q(last_name__icontains=search)
-        )
-    
-    # Order and paginate
-    trainers = trainers.order_by('first_name', 'last_name')
-    
-    # Calculate pagination
-    start = (page - 1) * per_page
-    end = start + per_page
-    total_count = trainers.count()
-    trainers_page = trainers[start:end]
-    
-    # Build response
-    trainers_data = [
-        {
-            'id': trainer.id,
-            'text': f"{trainer.first_name} {trainer.last_name}"
-        }
-        for trainer in trainers_page
-    ]
-    
-    return JsonResponse({
-        'results': trainers_data,
-        'pagination': {
-            'more': end < total_count
-        }
-    })
-
-
-@login_required
 @require_http_methods(["GET"])
 def api_monthly_breakdown(request):
     """
@@ -634,7 +579,11 @@ def api_monthly_breakdown(request):
         start_date = datetime.strptime(start, "%Y-%m-%d").date()
         end_date = datetime.strptime(end, "%Y-%m-%d").date()
         
-        # Use TruncMonth to group by month - MUCH more efficient
+        # Create timezone-aware datetime objects for DateTimeField comparisons
+        start_datetime = make_aware(datetime.combine(start_date, datetime.min.time()))
+        end_datetime = make_aware(datetime.combine(end_date, datetime.max.time()))
+        
+        # Income by month
         payments_by_month = Payments.objects.filter(
             organization=organization,
             paymentdate__range=[start_date, end_date]
@@ -644,11 +593,6 @@ def api_monthly_breakdown(request):
             total=Sum('paymentAmount')
         ).order_by('month')
         
-        # Create timezone-aware datetime objects for DateTimeField
-        start_datetime = make_aware(datetime.combine(start_date, datetime.min.time()))
-        end_datetime = make_aware(datetime.combine(end_date, datetime.max.time()))
-        
-        # Additional income sources by month
         added_payments_by_month = Addedpay.objects.filter(
             organization=organization,
             date__range=[start_datetime, end_datetime]
@@ -757,7 +701,7 @@ def api_monthly_breakdown(request):
                 'year': current_date.year,
                 'income': income,
                 'expenses': expenses,
-                'net': round(income - expenses, 2)  ,
+                'net': round(income - expenses, 2),
             })
             
             # Move to next month
@@ -779,7 +723,9 @@ def api_monthly_breakdown(request):
             'traceback': traceback.format_exc()
         }, status=500)
     
+
 @login_required
+@require_organization
 @require_http_methods(["GET"])
 def api_daily_breakdown(request):
     """
