@@ -272,51 +272,60 @@ def handle_add_payment_post(request):
 @require_http_methods(["GET"])
 def api_trainers_for_payment(request):
     """
-    JSON API: Get active trainers for payment form
-    Optimized with pagination and search
-    Returns data in Select2 format
+    JSON API: Select2 trainers search (FAST)
+    - No COUNT() (expensive)
+    - Uses slice per_page+1 to know if more
+    - Caches results briefly
     """
     try:
         organization = request.organization
-        search = request.GET.get('search', '').strip()
+        search = (request.GET.get('search') or '').strip()
         page = int(request.GET.get('page', 1))
-        per_page = 50
-        
-        # Base query - only active trainers
-        trainers = Trainer.objects.filter(
+        per_page = 30  # خففها شوية باش يكون سريع
+
+        # Optional: avoid huge strings
+        if len(search) > 50:
+            search = search[:50]
+
+        cache_key = f"trainers_select2:{organization.id}:{search}:{page}:{per_page}"
+        cached = cache.get(cache_key)
+        if cached:
+            return JsonResponse(cached)
+
+        qs = Trainer.objects.filter(
             organization=organization,
             is_active=True
-        ).only('id', 'first_name', 'last_name').order_by('first_name', 'last_name')
-        
-        # Search filter
+        )
+
+        # IMPORTANT: search strategy
+        # istartswith أسرع من icontains بزاف
         if search:
-            trainers = trainers.filter(
-                Q(first_name__icontains=search) |
-                Q(last_name__icontains=search)
+            qs = qs.filter(
+                Q(first_name__istartswith=search) |
+                Q(last_name__istartswith=search)
             )
-        
-        # Calculate pagination
+        else:
+            # إلا ماكاينش search، متجيبش بزاف (أو رجّع خاوي باش يجبر المستخدم يكتب)
+            # خيار 1: رجّع خاوي
+            return JsonResponse({'results': [], 'pagination': {'more': False}})
+
+        qs = qs.order_by('first_name', 'last_name').values('id', 'first_name', 'last_name')
+
         start = (page - 1) * per_page
-        end = start + per_page
-        total_count = trainers.count()
-        trainers_page = list(trainers[start:end])
-        
-        # Build response in Select2 format
-        trainers_data = [
-            {
-                'id': trainer.id,
-                'text': f"{trainer.first_name} {trainer.last_name}"
-            }
-            for trainer in trainers_page
-        ]
-        
-        return JsonResponse({
-            'results': trainers_data,
-            'pagination': {
-                'more': end < total_count
-            }
-        })
-    
+        end = start + per_page + 1  # +1 باش نعرفو واش كاين المزيد بلا count()
+
+        rows = list(qs[start:end])
+        more = len(rows) > per_page
+        rows = rows[:per_page]
+
+        data = {
+            'results': [{'id': r['id'], 'text': f"{r['first_name']} {r['last_name']}"} for r in rows],
+            'pagination': {'more': more},
+        }
+
+        cache.set(cache_key, data, 60)  # 60s كافية
+        return JsonResponse(data)
+
     except Exception as e:
         import traceback
         traceback.print_exc()

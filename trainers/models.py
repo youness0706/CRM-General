@@ -487,6 +487,8 @@ class Trainer(models.Model):
             models.Index(fields=['organization', 'is_active']),
             models.Index(fields=['organization', 'category']),
             models.Index(fields=['first_name', 'last_name']),
+             models.Index(fields=['organization', 'is_active', 'first_name']),
+            models.Index(fields=['organization', 'is_active', 'last_name']),
         
         ]
 

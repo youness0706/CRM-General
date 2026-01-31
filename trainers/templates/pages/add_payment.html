@@ -218,27 +218,31 @@ if (typeof window.PaymentFormManager === 'undefined') {
             initSelect2() {
                 console.log('Initializing Select2');
                 this.trainerSelect.select2({
-                    theme: 'bootstrap-5',
-                    placeholder: 'ابحث عن المتدرب...',
+                     theme: 'bootstrap-5',
+                    placeholder: 'اكتب حرفين على الأقل للبحث...',
                     dir: 'rtl',
                     language: 'ar',
                     allowClear: true,
-                    minimumInputLength: 0,
+
+                    minimumInputLength: 2,   // مهم بزاف
                     width: '100%',
+
                     ajax: {
                         url: '{% url "api_trainers_for_payment" %}',
                         dataType: 'json',
-                        delay: 250,
-                        data: function(params) {
-                            return { search: params.term || '', page: params.page || 1 };
+                        delay: 400,            // قلل النداءات
+                        data: function (params) {
+                        return {
+                            search: params.term || '',
+                            page: params.page || 1
+                        };
                         },
-                        processResults: function(data, params) {
-                            params.page = params.page || 1;
-                            if (!data.results) return { results: [], pagination: { more: false } };
-                            return { results: data.results, pagination: { more: data.pagination && data.pagination.more } };
-                        },
-                        error: function(xhr, status, error) {
-                            console.error('AJAX Error:', { status: xhr.status, statusText: xhr.statusText, error: error, response: xhr.responseText });
+                        processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: data.results || [],
+                            pagination: { more: !!(data.pagination && data.pagination.more) }
+                        };
                         },
                         cache: true
                     },
